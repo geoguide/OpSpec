@@ -54,7 +54,7 @@ class Player {
         const { id, first_name, last_name, username } = playerObj;
         connection.query('INSERT INTO players SET ?', {
           id, first_name, last_name, username
-        }, (error, results, fields) => {
+        }, (error, results) => {
           if (error) throw error;
           self.id = playerObj.id;
           self.telegram_id = playerObj.id;
@@ -79,7 +79,7 @@ class Player {
         connection.query(
           'UPDATE `players` SET `state` = ? WHERE id = ?',
           [state, self.id],
-          (error, results, fields) => {
+          (error) => {
             if (error) throw error;
             self.state = state;
             resolve(true);

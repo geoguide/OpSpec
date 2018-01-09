@@ -62,11 +62,10 @@ function checkState(state) {
   return valid;
 }
 
-
-
 //Every Message
-scuar.on('text', (message) => {
+scuar.on('message', (message) => {
   let response = '';
+  console.log('top level message handling', message);
   //load user data (will create if load fails)
   player.load(message.from).then((result) => {
     console.log('---RESULT HERE', result);
