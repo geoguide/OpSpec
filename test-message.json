@@ -1,0 +1,16 @@
+{ message_id: 102,
+  from: 
+   { id: 422677320,
+     is_bot: false,
+     first_name: 'Geoff',
+     last_name: 'Guide',
+     username: 'zeradin',
+     language_code: 'en' },
+  chat: 
+   { id: 422677320,
+     first_name: 'Geoff',
+     last_name: 'Guide',
+     username: 'zeradin',
+     type: 'private' },
+  date: 1514479170,
+  text: 'test' }

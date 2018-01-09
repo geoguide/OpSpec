@@ -1,0 +1,17 @@
+{
+  "extends": [
+    "rallycoding"
+  ],
+  "parser": "babel-eslint",
+  "globals": { "fetch": false },
+  "rules": {
+      "arrow-body-style": 0,
+      "no-unused-vars": 1,
+      "comma-spacing": 1,
+      "object-curly-spacing": 1,
+      "space-before-blocks": 1,
+      "camelcase": 1
+  },
+  "plugins": [
+  ]
+}
