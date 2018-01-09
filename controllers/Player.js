@@ -19,9 +19,9 @@ class Player {
           [playerObj.id],
           (error, results) => {
             if (error) throw error;
-            const result = results[0];
             if (results.length > 0) {
               console.log('- Player found, loading');
+              const result = results[0];
               self.id = result.id;
               self.telegram_id = result.id;
               self.username = result.username;
@@ -31,7 +31,7 @@ class Player {
               resolve(true);
             } else {
               console.log('- Player not found, creating');
-              self.create(playerObj).then((createResult) => resolve(createResult));
+              self.create(playerObj).then((createResult) => resolve('new_player'));
             }
           }
         );

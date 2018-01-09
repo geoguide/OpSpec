@@ -12,7 +12,7 @@ const sanitize = require('sanitize-filename');
 
 const config = new Config();
 const appData = new AppData();
-const states = config.states;
+const states = appData.states;
 
 // TODO: Figure out final bots
 //Telegram Bots
@@ -66,21 +66,27 @@ function checkState(state) {
 
 //Every Message
 scuar.on('text', (message) => {
+  let response = '';
   //load user data (will create if load fails)
   player.load(message.from).then((result) => {
+    console.log('---RESULT HERE', result);
+    if (result === 'new_player') {
+      response = `Welcome new player ${message.from.first_name}`;
+    } else {
+      response = 'I mean I hear you... I jus\'t aint got nothin to say right now';
+    }
     console.log('after initial load', player);
+    //Do some default thing for now
+    console.log('------- On all text ------');
+    scuar.sendMessage(message.chat.id, response).catch((error) => {
+      console.error(error.code);
+      // => 'ETELEGRAM'
+      console.error(error.response.body);
+      // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
+    });
   }).catch((error) => {
     console.error('error in catch', error);
   });
-
-  //Do some default thing for now
-  console.log('------- On all text ------');
-	scuar.sendMessage(message.chat.id, 'I mean I hear you...').catch((error) => {
-		console.trace(error.code);
-      // => 'ETELEGRAM'
-		console.trace(error.response.body);
-      // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
-	});
 
   //Always store message
 	Common.storeMessage(message,'SCUARBot');
