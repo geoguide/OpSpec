@@ -1,11 +1,15 @@
 import mysql from 'mysql2';
+import Config from '../config.js';
+
+const config = new Config();
 
 // create the connection to database
 // TODO: move to own file and add environment variables
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  database: 'snack_brigade'
+  host: config.mysql.host,
+  user: config.mysql.user,
+  database: config.mysql.database,
+  password: config.mysql.password
 });
 
 
@@ -31,7 +35,7 @@ class Player {
               resolve(true);
             } else {
               console.log('- Player not found, creating');
-              self.create(playerObj).then((createResult) => resolve('new_player'));
+              self.create(playerObj).then(() => resolve('new_player'));
             }
           }
         );

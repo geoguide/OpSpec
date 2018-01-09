@@ -12,6 +12,12 @@ class Config {
         key: 'xxxxxxx:keyfromtelegrambotfather3'
       }
     };
+    this.mysql = {
+      host: 'localhost',
+      user: 'root',
+      database: 'snack_brigade',
+      password: ''
+    };
   }
 }
 
