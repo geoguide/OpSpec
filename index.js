@@ -95,7 +95,7 @@ scuar.on('message', (message) => {
     player.load(message.from).then((result) => {
       //console.log('---RESULT HERE', result);
       if (result === 'new_player' || message.from.username === 'zeradin') {
-        const promises = [];
+        const msgarray = [];
         for (let i = 0; i < responses[1].start.length; i++) {
           let r = responses[1].start[i];
           if (message.from.first_name && message.from.first_name !== '') {
@@ -103,14 +103,10 @@ scuar.on('message', (message) => {
           } else {
             r = r.replace(/PLAYER_NAME/g, 'citizen');
           }
-          promises.push(scuar.sendMessage(message.chat.id, r)
-          .catch(error => console.error(error)));
+          msgarray.push(r);
+          //setTimeout(() => { scuar.sendMessage(message.chat.id, r); }, i * 1000);
         }
-        /* TODO figure out how to serialize these promises - maybe need a delay? */
-        Promise.all(promises).then(() => {
-          console.log('sent');
-        }).catch(error => console.error(error));
-        //response = `Welcome new player ${message.from.first_name}`;
+        sendSeries(msgarray);
       } else {
         response = 'I mean I hear you... I just ain\'t got nothin to say right now';
       }
@@ -119,17 +115,32 @@ scuar.on('message', (message) => {
       Common.storeMessage(message, player.state, 'SCUARBot');
       //Do some default thing for now
       console.log('------- On all text ------');
-      scuar.sendMessage(message.chat.id, response).catch((error) => {
-        console.error(error.code);
-        // => 'ETELEGRAM'
-        console.error(error.response.body);
-        // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
-      });
+      if(response !== '') {
+        scuar.sendMessage(message.chat.id, response).catch((error) => {
+          console.error(error.code);
+          // => 'ETELEGRAM'
+          console.error(error.response.body);
+          // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
+        });
+      }
+
     }).catch((error) => {
       console.error('error in catch', error);
     });
   }
 });
+
+function sendMessage(m) {
+  console.log('called for ', m);
+  return scuar.sendMessage(messageObj.chat.id, m);
+}
+
+/* Not actually series but accounts for telegram's random delays */
+function sendSeries(messageArray) {
+  for(let i = 0; i < messageArray.length; i++) {
+    setTimeout(sendMessage, i * 1000, messageArray[i]);
+  }
+}
 
 snackbot.on('message', (message) => {
   //load user data (will create if load fails)

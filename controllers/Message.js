@@ -42,6 +42,26 @@ class Message {
       console.error(e);
     }
   }
+
+  /* TODO figure out how to make this work best */
+  saveMessage(data, state, bot = 'none') {
+    console.log('------- store message called -------');
+    try {
+      connection.query('INSERT INTO messages SET ?', {
+        player_id: data.from.id,
+        message_id: data.message_id,
+        message: data.text,
+        telegram_id: data.from.id,
+        state,
+        bot
+      }, (error, results) => {
+        if (error) throw error;
+        console.log('message inserted', results.insertId);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
 }
 
 export default Message;
