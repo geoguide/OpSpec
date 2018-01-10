@@ -10,7 +10,8 @@
       "comma-spacing": 1,
       "object-curly-spacing": 1,
       "space-before-blocks": 1,
-      "camelcase": 0
+      "camelcase": 0,
+      "keyword-spacing": 0
   },
   "plugins": [
   ]

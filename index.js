@@ -1,6 +1,7 @@
 import VerEx from 'verbal-expressions';
 import Common from './controllers/Common';
 import Player from './controllers/Player';
+import Message from './controllers/Message';
 import Config from './config';
 import AppData from './data/AppData';
 
@@ -16,7 +17,7 @@ const states = appData.states;
 
 // TODO: Figure out final bots
 //Telegram Bots
-const scuar = new TelegramBot(config.bots.scuar_old.key, { polling: true });
+const scuar = new TelegramBot(config.bots.scuar.key, { polling: true });
 
 const snackbot = new TelegramBot(
   config.bots.snackbot.key,
@@ -24,14 +25,21 @@ const snackbot = new TelegramBot(
 );
 
 const player = new Player();
+let messageObj = new Message();
 
 const responses = {
-	greeting: 'Hello',
-	whatsup: 'just chilling',
-	running: 'running on geoff\'s computer',
-	other: 'I don\'t know what to say'
+  1: {
+    start: [
+      'Hello PLAYER_NAME!',
+      'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!',
+      'SCUAR is a brand new ministry called together by your government with your nutritional needs in mind. We’re here to help you understand your family’s alimentary needs and increase access to the foods you love, three times a day, every day!',
+      'In this convenient ePacket, you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again!',
+      'https://www.scuar.com/ePacket.pdf'
+    ]
+  }
 };
 
+/* Use this for later complex Regex issues */
 // Create an example of how to test for correctly formed URLs
 const tester = VerEx()
     .startOfLine()
@@ -62,39 +70,73 @@ function checkState(state) {
   return valid;
 }
 
-//Every Message
+//Every Message Game Changes - This should be used just to catch specific things
+//- like if at this step and says solution
+//- maybe if it's something similar but wrong also
+//We should have different handlers for generic responses in the middle of the game
 scuar.on('message', (message) => {
   let response = '';
-  console.log('top level message handling', message);
-  //load user data (will create if load fails)
-  player.load(message.from).then((result) => {
-    console.log('---RESULT HERE', result);
-    if (result === 'new_player') {
-      response = `Welcome new player ${message.from.first_name}`;
-    } else {
-      response = 'I mean I hear you... I jus\'t aint got nothin to say right now';
-    }
-    console.log('after initial load', player);
-    //Do some default thing for now
-    console.log('------- On all text ------');
-    scuar.sendMessage(message.chat.id, response).catch((error) => {
-      console.error(error.code);
-      // => 'ETELEGRAM'
-      console.error(error.response.body);
-      // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
-    });
-  }).catch((error) => {
-    console.error('error in catch', error);
-  });
+  let starting = false;
+  messageObj = new Message(message);
+  if (message.text === '/start') {
+    starting = true;
+  }
 
-  //Always store message
-	Common.storeMessage(message,'SCUARBot');
+  if (message.from.username === 'zeradin') {
+    //console.info(message);
+  }
+
+  if (starting) {
+    scuar.sendMessage(message.chat.id, 'This should be the first thing I say to you.')
+    .catch(error => console.error(error));
+  } else {
+    //console.log('top level message handling', message);
+    //load user data (will create if load fails)
+    player.load(message.from).then((result) => {
+      //console.log('---RESULT HERE', result);
+      if (result === 'new_player' || message.from.username === 'zeradin') {
+        const promises = [];
+        for (let i = 0; i < responses[1].start.length; i++) {
+          let r = responses[1].start[i];
+          if (message.from.first_name && message.from.first_name !== '') {
+              r = r.replace(/PLAYER_NAME/g, message.from.first_name);
+          } else {
+            r = r.replace(/PLAYER_NAME/g, 'citizen');
+          }
+          promises.push(scuar.sendMessage(message.chat.id, r)
+          .catch(error => console.error(error)));
+        }
+        /* TODO figure out how to serialize these promises - maybe need a delay? */
+        Promise.all(promises).then(() => {
+          console.log('sent');
+        }).catch(error => console.error(error));
+        //response = `Welcome new player ${message.from.first_name}`;
+      } else {
+        response = 'I mean I hear you... I just ain\'t got nothin to say right now';
+      }
+      //console.log('after initial load', player);
+      //Always store message - move to after we know what step the user is on
+      Common.storeMessage(message, player.state, 'SCUARBot');
+      //Do some default thing for now
+      console.log('------- On all text ------');
+      scuar.sendMessage(message.chat.id, response).catch((error) => {
+        console.error(error.code);
+        // => 'ETELEGRAM'
+        console.error(error.response.body);
+        // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
+      });
+    }).catch((error) => {
+      console.error('error in catch', error);
+    });
+  }
 });
 
-snackbot.on('text', (message) => {
+snackbot.on('message', (message) => {
   //load user data (will create if load fails)
   player.load(message.from).then((result) => {
-    console.log('after initial load', player);
+    //console.log('after initial load', player, 'result was', result);
+    //Always store message
+    Common.storeMessage(message, player.state, 'Snackbot');
   }).catch((error) => {
     console.error('error in catch', error);
   });
@@ -107,19 +149,16 @@ snackbot.on('text', (message) => {
 		console.trace(error.response.body);
       // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
 	});
-
-  //Always store message
-	Common.storeMessage(message, 'Snackbot');
 });
 
 //dumbest thing
 scuar.onText(/\/echo (.+)/, (msg, match) => {
-	scuar.sendMessage(msg.chat.id, 'yoyo');
+	scuar.sendMessage(msg.chat.id, match[2]);
 });
 
 scuar.onText(/\/snack (.+)/, (msg, match) => {
-  console.log('msg was ', msg);
-  console.log('id was: ', msg.from.id);
+  //console.log('msg was ', msg);
+  //console.log('id was: ', msg.from.id);
 	snackbot.sendMessage(msg.from.id, 'yoyo').catch(error => console.error(error));
 });
 
@@ -132,7 +171,7 @@ scuar.onText(/^\/(state) (.+)/i, (msg, match) => {
       scuar.sendMessage(msg.chat.id, `your state is set to *${player.state}: ${stateInfo.title}*`, {
         parse_mode: 'Markdown'
       });
-      console.log('state player', player);
+      //console.log('state player', player);
     }).catch((error) => console.error(error));
   } else {
     scuar.sendMessage(msg.chat.id, `requested state (${state}) is *INVALID*`, {

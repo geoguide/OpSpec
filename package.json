@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rimraf dist/ && babel -w ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./dist --copy-files &",
-    "start": "npm run build && pm2 kill && pm2 start dist/index.js --watch ./dist/index.js && pm2 logs"
+    "start": "npm run build && pm2 kill && pm2 start dist/index.js --watch && pm2 logs"
   },
   "repository": {
     "type": "git",
