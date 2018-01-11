@@ -24,6 +24,10 @@ class AppData {
         title: 'Eat a snack'
       }
     };
+
+    this.audio = {
+      snack1: 'CQADAQADRwADDEG5RikV-VdpKkD9Ag'
+    };
   }
 }
 

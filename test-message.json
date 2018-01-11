@@ -1,12 +1,13 @@
+text:
 { message_id: 102,
-  from: 
+  from:
    { id: 422677320,
      is_bot: false,
      first_name: 'Geoff',
      last_name: 'Guide',
      username: 'zeradin',
      language_code: 'en' },
-  chat: 
+  chat:
    { id: 422677320,
      first_name: 'Geoff',
      last_name: 'Guide',
@@ -14,3 +15,37 @@
      type: 'private' },
   date: 1514479170,
   text: 'test' }
+
+photo-upload:
+{ message_id: 385,
+  from:
+   { id: 422677320,
+     is_bot: false,
+     first_name: 'Geoff',
+     last_name: 'Guide',
+     username: 'zeradin',
+     language_code: 'en-US' },
+  chat:
+   { id: 422677320,
+     first_name: 'Geoff',
+     last_name: 'Guide',
+     username: 'zeradin',
+     type: 'private' },
+  date: 1515636841,
+  photo:
+   [ { file_id: 'AgADAQAD4qcxG4VVuUYcR8cOOJSxQZZwDDAABPa3ZcIxsjeMIVoAAgI',
+       file_size: 1649,
+       width: 90,
+       height: 67 },
+     { file_id: 'AgADAQAD4qcxG4VVuUYcR8cOOJSxQZZwDDAABAQf0QrLgN7xIloAAgI',
+       file_size: 30819,
+       width: 320,
+       height: 240 },
+     { file_id: 'AgADAQAD4qcxG4VVuUYcR8cOOJSxQZZwDDAABKYmL75NSxUcJFoAAgI',
+       file_size: 131392,
+       width: 800,
+       height: 600 },
+     { file_id: 'AgADAQAD4qcxG4VVuUYcR8cOOJSxQZZwDDAABMa5qvq5OzhII1oAAgI',
+       file_size: 214838,
+       width: 1280,
+       height: 960 } ] }

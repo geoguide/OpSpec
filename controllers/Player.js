@@ -14,6 +14,7 @@ const connection = mysql.createConnection({
 
 
 class Player {
+  //Load Player from database
   load(playerObj) {
     const self = this;
     const load = new Promise((resolve, reject) => {
@@ -40,7 +41,7 @@ class Player {
           }
         );
       } catch (e) {
-        console.error(e);
+        console.error('Player.load', e);
         reject(e);
       }
     });
@@ -65,11 +66,31 @@ class Player {
           resolve(results.insertId);
         });
       } catch (e) {
-        console.error(e);
+        console.error('player.create', e);
         reject(e);
       }
     });
     return create;
+  }
+
+  save() {
+    const self = this;
+    const save = new Promise((resolve, reject) => {
+      try {
+        connection.query(
+          'UPDATE `players` SET `first_name` = ?, `last_name` = ?, `state` = ? WHERE id = ?',
+          [self.first_name, self.last_name, self.state, self.id],
+          (error) => {
+            if (error) throw error;
+            resolve(true);
+          }
+        );
+      } catch (e) {
+        console.error('Player.save', e);
+        reject(e);
+      }
+    });
+    return save;
   }
 
   setState(state) {
@@ -86,7 +107,7 @@ class Player {
           }
         );
       } catch (e) {
-        console.error(e);
+        console.error('Player.setState', e);
         reject(e);
       }
     });

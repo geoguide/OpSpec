@@ -36,6 +36,12 @@ const responses = {
       'In this convenient ePacket, you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again!',
       'https://www.scuar.com/ePacket.pdf'
     ]
+  },
+  2: {
+    start: [
+      'The high-tech SCUAR department runs exclusively on the newest and most advanced payment techniques.  To register with SCUAR and receive your first meal, please go to the following location: XXXX  To begin you will need $20 in cash, and to download a wallet for your SCUARcoin, which you can download for free here:  XXXXXX',
+      'Once you’ve arrived at the registration point, send a text saying “Here”.'
+    ]
   }
 };
 
@@ -78,35 +84,70 @@ scuar.on('message', (message) => {
   let response = '';
   let starting = false;
   messageObj = new Message(message);
+
   if (message.text === '/start') {
     starting = true;
   }
 
-  if (message.from.username === 'zeradin') {
-    //console.info(message);
-  }
+  //for debugging and getting file ids of uploads
+  /*if (message.from.username === 'zeradin') {
+    //Show Message Details
+    console.info(message);
+    //Save all the images
+    if(message.photo) {
+      const caption = (message.caption) ? message.caption : '';
+      for (let i = 0; i < message.photo.length; i++) {
+        Common.saveImage(message.photo[i], caption);
+      }
+    } else if(message.document) {
+      console.log('save document');
+      const caption = (message.caption) ? message.caption : message.document.file_name;
+      Common.saveFile(message.document, caption);
+    } else if(message.audio) {
+      Common.saveAudio(message.audio);
+    }
+  }*/
+
+  //if just starting
+
+  //have they completed current step?
+
+  //handle specific messages
+
+  //does this step have anything to say to what they've said?
+
+  //handle random messages
 
   if (starting) {
     scuar.sendMessage(message.chat.id, 'This should be the first thing I say to you.')
     .catch(error => console.error(error));
   } else {
-    //console.log('top level message handling', message);
     //load user data (will create if load fails)
-    player.load(message.from).then((result) => {
+    player.load(message.from).then(() => {
       //console.log('---RESULT HERE', result);
-      if (result === 'new_player' || message.from.username === 'zeradin') {
+
+      const advancing = completedStep();
+      //check for progress?
+      if(advancing) {
+        console.info('-- Player HAS completed step');
+        player.state++;
+        player.save();
+      } else {
+        console.info('-- Player has NOT completed step');
+      }
+
+      //This stuff needs to be done after the check for it
+      if (player.state === 1) {
         const msgarray = [];
         for (let i = 0; i < responses[1].start.length; i++) {
-          let r = responses[1].start[i];
-          if (message.from.first_name && message.from.first_name !== '') {
-              r = r.replace(/PLAYER_NAME/g, message.from.first_name);
-          } else {
-            r = r.replace(/PLAYER_NAME/g, 'citizen');
-          }
+          const r = personalize(responses[1].start[i]);
           msgarray.push(r);
-          //setTimeout(() => { scuar.sendMessage(message.chat.id, r); }, i * 1000);
         }
         sendSeries(msgarray);
+      } else if(player.state === 2) {
+        sendSeries(responses[2].start);
+      } else if(player.state === 3) {
+        scuar.sendAudio(message.chat.id, appData.audio.snack1);
       } else {
         response = 'I mean I hear you... I just ain\'t got nothin to say right now';
       }
@@ -116,29 +157,87 @@ scuar.on('message', (message) => {
       //Do some default thing for now
       console.log('------- On all text ------');
       if(response !== '') {
-        scuar.sendMessage(message.chat.id, response).catch((error) => {
+        console.log('here');
+        scuar.sendMessage(message.chat.id, response)
+        .catch((error) => {
           console.error(error.code);
           // => 'ETELEGRAM'
           console.error(error.response.body);
           // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
         });
+      } else {
+        console.log('had nothin');
       }
-
     }).catch((error) => {
-      console.error('error in catch', error);
+      console.error('error in load', error);
     });
   }
 });
 
+//This can probably be moved to Player
+function completedStep() {
+  let advance = false;
+  switch(player.state) {
+    case 0:
+      if(messageObj.text === '/eat') {
+        advance = true;
+      }
+      break;
+    case 1:
+      if(messageObj.text === '/eat') {
+        advance = true;
+      }
+      break;
+    case 2:
+      if(messageObj.text === '/eat') {
+        advance = true;
+      }
+      break;
+    case 3:
+      if(messageObj.text === '/eat') {
+        advance = true;
+      }
+      break;
+    case 4:
+      if(messageObj.text === '/eat') {
+        advance = true;
+      }
+      break;
+    case 5:
+      if(messageObj.text === '/eat') {
+        advance = true;
+      }
+      break;
+    case 6:
+      if(messageObj.text === '/eat') {
+        advance = true;
+      }
+      break;
+    default:
+      advance = false;
+  }
+  return advance;
+}
+
+function personalize(r) {
+  let result = r;
+  if (messageObj.from.first_name && messageObj.from.first_name !== '') {
+      result = r.replace(/PLAYER_NAME/g, messageObj.from.first_name);
+  } else {
+    result = r.replace(/PLAYER_NAME/g, 'citizen');
+  }
+  return result;
+}
+
 function sendMessage(m) {
   console.log('called for ', m);
-  return scuar.sendMessage(messageObj.chat.id, m);
+  return scuar.sendMessage(messageObj.chat.id, m).catch(error => console.error(error));
 }
 
 /* Not actually series but accounts for telegram's random delays */
 function sendSeries(messageArray) {
   for(let i = 0; i < messageArray.length; i++) {
-    setTimeout(sendMessage, i * 1000, messageArray[i]);
+    setTimeout(sendMessage, i * 1000, messageArray[i]).catch(error => console.error(error));
   }
 }
 
@@ -202,7 +301,7 @@ scuar.onText(/^\/(reset)/i, (msg, match) => {
   }).catch((error) => console.error(error));
 });
 
-scuar.onText(/^\/(eat)/i, (msg, match) => {
+/*scuar.onText(/^\/(eat)/i, (msg, match) => {
   console.log('------- eating ------');
   console.log('state is currently', player.state);
   let newState = 0;
@@ -227,7 +326,7 @@ scuar.onText(/^\/(eat)/i, (msg, match) => {
       parse_mode: 'Markdown'
     });
   }).catch((error) => console.error(error));
-});
+});*/
 
 scuar.onText(/^\/(checkup)/i, (msg, match) => {
   console.log('------- checking player ------');
