@@ -28,7 +28,11 @@ const player = new Player();
 let messageObj = new Message();
 
 const responses = {
+  0: {
+    title: 'Step 0'
+  },
   1: {
+    title: 'Welcome',
     start: [
       'Hello PLAYER_NAME!',
       'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!',
@@ -38,9 +42,51 @@ const responses = {
     ]
   },
   2: {
+    title: 'Registration',
     start: [
       'The high-tech SCUAR department runs exclusively on the newest and most advanced payment techniques.  To register with SCUAR and receive your first meal, please go to the following location: XXXX  To begin you will need $20 in cash, and to download a wallet for your SCUARcoin, which you can download for free here:  XXXXXX',
       'Once you’ve arrived at the registration point, send a text saying “Here”.'
+    ],
+    notes: 'after Xms send audio file'
+  },
+  3: {
+    title: 'Bitcoin Orientation',
+    start: [
+      'Welcome to the SCUAR Machine™, everyone’s favorite high-tech ATM-style futuristic gatekeeper to food security!  Take your $20, put it into the machine, and transfer the coins to your bitcoin wallet.'
+    ],
+    notes: 'This step there are two success criteria and the game branches'
+  },
+  4: {
+    title: 'Initiation',
+    start: [
+      'Password: "full facial"'
+    ],
+    notes: 'Send Voice Message about the story of SCUAR',
+    termination: 'Give code word to get disguise'
+  },
+  5: {
+    title: 'Observation Mission',
+    start: [
+      'sneak around audio'
+    ]
+  },
+  6: {
+    title: 'Snack Procurment',
+    start: [
+      'You found all the cameras!  Or maybe you didn’t.  That’s ok.  You can go look for them later.  I’m hungry, aren’t you?  Let’s eat.  Snack Brigade is all about snacking when you feel it. Free Snacks are never truly free, but they are still delicious, and “free” means more than one thing!',
+      'Let’s go in this place.  It’s Open.  Keep your disguise on.  This place is heavily surveilled.  Go up to the counter and order the “Special Snack.”  You’ll need to give them some Bitcoin, but you know all about that now.',
+    ]
+  },
+  7: {
+    title: 'Go to plaque',
+    start: [
+      'Go to Snow Park and find the plaque'
+    ]
+  },
+  8: {
+    title: 'Vandalism and debriefing',
+    start: [
+
     ]
   }
 };
@@ -90,7 +136,7 @@ scuar.on('message', (message) => {
   }
 
   //for debugging and getting file ids of uploads
-  /*if (message.from.username === 'zeradin') {
+  if (message.from.username === 'zeradin') {
     //Show Message Details
     console.info(message);
     //Save all the images
@@ -106,7 +152,17 @@ scuar.on('message', (message) => {
     } else if(message.audio) {
       Common.saveAudio(message.audio);
     }
-  }*/
+  }
+
+  // Should probably make this a class
+  // - with variables like (starting, comm complete etc)
+  // - card with qr code but also start code
+  // - completed communication
+  // - - then start off with check starting
+  // - - - then conditionally send to check completed then send to
+  // - - - make function that we can message bot to send players messages
+
+  //What if they aren't a player?!
 
   //if just starting
 
@@ -115,8 +171,11 @@ scuar.on('message', (message) => {
   //handle specific messages
 
   //does this step have anything to say to what they've said?
+  // - do where do i go?
 
   //handle random messages
+
+  //send error messages to user
 
   if (starting) {
     scuar.sendMessage(message.chat.id, 'This should be the first thing I say to you.')
@@ -177,41 +236,51 @@ scuar.on('message', (message) => {
 //This can probably be moved to Player
 function completedStep() {
   let advance = false;
+  console.log('checking completed step: ', messageObj);
   switch(player.state) {
     case 0:
-      if(messageObj.text === '/eat') {
+      if(messageObj.text === 'unique id') {
         advance = true;
       }
       break;
     case 1:
-      if(messageObj.text === '/eat') {
+      if(messageObj.text === 'Oakland') {
         advance = true;
       }
       break;
     case 2:
-      if(messageObj.text === '/eat') {
+      if(messageObj.text === 'here') {
         advance = true;
       }
       break;
     case 3:
-      if(messageObj.text === '/eat') {
+      if(messageObj.text === 'address' && 'logo') {
+        advance = true;
+      } else if(messageObj.text === 'logo') {
         advance = true;
       }
       break;
     case 4:
-      if(messageObj.text === '/eat') {
+      if(messageObj.text === 'photo') {
         advance = true;
       }
       break;
     case 5:
-      if(messageObj.text === '/eat') {
+      if(messageObj.text === 'number of some sort') {
         advance = true;
       }
       break;
     case 6:
-      if(messageObj.text === '/eat') {
+      if(messageObj.text === 'banana') {
         advance = true;
       }
+      break;
+    case 7:
+      if(messageObj.text === 'long may he floss') {
+        advance = true;
+      }
+      break;
+    case 8:
       break;
     default:
       advance = false;
@@ -237,7 +306,7 @@ function sendMessage(m) {
 /* Not actually series but accounts for telegram's random delays */
 function sendSeries(messageArray) {
   for(let i = 0; i < messageArray.length; i++) {
-    setTimeout(sendMessage, i * 1000, messageArray[i]).catch(error => console.error(error));
+    setTimeout(sendMessage, i * 1000, messageArray[i]);
   }
 }
 
@@ -292,7 +361,6 @@ scuar.onText(/^\/(state) (.+)/i, (msg, match) => {
 
 scuar.onText(/^\/(reset)/i, (msg, match) => {
   console.log('------- reset state ------');
-  const state = parseInt(match[2],10);
   player.setState(0).then((result) => {
     scuar.sendMessage(msg.chat.id, `your state is set to *${player.state}*`, {
       parse_mode: 'Markdown'

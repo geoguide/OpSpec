@@ -34,8 +34,8 @@ class Message {
           username: props.chat.username,
           type: props.chat.type
         };
-        this.date = props.chat.date;
-        this.text = props.chat.text;
+        this.date = props.date;
+        this.text = props.text;
         //console.log('Message.js says', JSON.stringify(this, 2));
       }
     } catch (e) {
