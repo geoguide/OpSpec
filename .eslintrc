@@ -11,7 +11,8 @@
       "object-curly-spacing": 1,
       "space-before-blocks": 1,
       "camelcase": 0,
-      "keyword-spacing": 0
+      "keyword-spacing": 0,
+      "prefer-const": 1
   },
   "plugins": [
   ]

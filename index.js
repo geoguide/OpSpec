@@ -42,7 +42,7 @@ const responses = {
     ]
   },
   2: {
-    title: 'Registration',
+    title: 'Demographics',
     start: [
       'The high-tech SCUAR department runs exclusively on the newest and most advanced payment techniques.  To register with SCUAR and receive your first meal, please go to the following location: XXXX  To begin you will need $20 in cash, and to download a wallet for your SCUARcoin, which you can download for free here:  XXXXXX',
       'Once you’ve arrived at the registration point, send a text saying “Here”.'
@@ -78,7 +78,7 @@ const responses = {
     ]
   },
   7: {
-    title: 'Go to plaque',
+    title: 'Plaque',
     start: [
       'Go to Snow Park and find the plaque'
     ]
@@ -161,6 +161,7 @@ scuar.on('message', (message) => {
   // - - then start off with check starting
   // - - - then conditionally send to check completed then send to
   // - - - make function that we can message bot to send players messages
+  // - - - and also send everyone at a certain state a message
 
   //What if they aren't a player?!
 
@@ -183,8 +184,10 @@ scuar.on('message', (message) => {
   } else {
     //load user data (will create if load fails)
     player.load(message.from).then(() => {
+      console.log('player is', player);
       //console.log('---RESULT HERE', result);
-
+      return player.checkStepComplete();
+    }).then(result => {
       const advancing = completedStep();
       //check for progress?
       if(advancing) {

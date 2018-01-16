@@ -25,7 +25,7 @@ class Player {
           (error, results) => {
             if (error) throw error;
             if (results.length > 0) {
-              console.log('- Player found, loading');
+              console.log('- Player found, loading', results);
               const result = results[0];
               self.id = result.id;
               self.telegram_id = result.id;
@@ -91,6 +91,79 @@ class Player {
       }
     });
     return save;
+  }
+
+  getSuccessCriteria() {
+    const self = this;
+    const save = new Promise((resolve, reject) => {
+      try {
+        connection.query(
+          'SELECT * FROM success_criteria WHERE state = ?',
+          [self.state],
+          (error, results) => {
+            if (error) throw error;
+            console.log(this);
+            console.log('results', results);
+            resolve(results);
+          }
+        );
+      } catch (e) {
+        console.error('Player.save', e);
+        reject(e);
+      }
+    });
+    return save;
+  }
+
+  checkStepComplete() {
+    const self = this;
+    let success = false;
+    console.log('self is', self);
+    if(self.state !== null) {
+      console.log('state is');
+      success = new Promise((resolve, reject) => {
+        self.getSuccessCriteria().then(result => {
+          console.log('about to do it');
+          return self.checkCriteriaComplete(result);
+        }).then(result => {
+          resolve(result);
+        }).catch(error => {
+          reject(error);
+        });
+      });
+      return success;
+    }
+    console.log('NO STATE');
+    return false;
+  }
+
+  checkCriteriaComplete(results) {
+    const self = this;
+    let playerSuccess = 0;
+    console.log('checking', results);
+    const complete = new Promise((resolve, reject) => {
+      try {
+        connection.query(
+          'SELECT * FROM player_success_criteria WHERE player_id = ? AND criteria_id IN (?)',
+          [self.id, results.map(a => a.id)],
+          (error, result) => {
+            if(error) { reject(error); }
+            if(result && results.length === result.length) {
+              resolve('you had all of them!');
+            } else {
+              if(!result) { playerSuccess = 0; } else {
+                playerSuccess = result.length;
+              }
+              resolve('you had', playerSuccess, 'of', results.length);
+            }
+          }
+        );
+      } catch(e) {
+        console.error(e);
+        reject(e);
+      }
+    });
+    return complete;
   }
 
   setState(state) {
