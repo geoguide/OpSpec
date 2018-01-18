@@ -28,6 +28,8 @@ class AppData {
     this.audio = {
       snack1: 'CQADAQADRwADDEG5RikV-VdpKkD9Ag'
     };
+
+    this.debug = false;
   }
 }
 

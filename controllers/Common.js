@@ -1,4 +1,5 @@
 const mysql = require('mysql2');
+import AppData from '../data/AppData';
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -6,9 +7,13 @@ const connection = mysql.createConnection({
   database: 'snack_brigade'
 });
 
+const appData = new AppData();
+//For development
+const debug = appData.debug;
+
 class Common {
   static storeMessage(data, state, bot = 'none') {
-    console.log('------- store message called -------');
+    if(debug) { console.log('------- store message called -------'); }
     try {
       connection.query('INSERT INTO messages SET ?', {
         player_id: data.from.id,
@@ -27,7 +32,7 @@ class Common {
   }
 
   static saveImage(imageData, title = null) {
-    console.log('------- store message called -------');
+    if(debug) { console.log('------- store message called -------'); }
     const { file_id, file_size, height, width } = imageData;
     try {
       connection.query('INSERT INTO images SET ?', {
@@ -46,7 +51,7 @@ class Common {
   }
 
   static saveFile(fileData, title = null) {
-    console.log('------- store file called -------');
+    if(debug) { console.log('------- store file called -------'); }
     const { file_id, file_size } = fileData;
     try {
       connection.query('INSERT INTO files SET ?', {
@@ -55,7 +60,7 @@ class Common {
         file_size
       }, (error, results) => {
         if (error) throw error;
-        console.log('image saved', results.insertId);
+        if(debug) { console.log('image saved', results.insertId); }
       });
     } catch (e) {
       console.error('Common.saveImage', e);
@@ -63,7 +68,7 @@ class Common {
   }
 
   static saveAudio(audioData) {
-    console.log('------- store audio called -------');
+    if(debug) { console.log('------- store audio called -------'); }
     const { file_id, file_size, title = null, mime_type, duration } = audioData;
     try {
       connection.query('INSERT INTO audio SET ?', {
@@ -74,7 +79,7 @@ class Common {
         duration
       }, (error, results) => {
         if (error) throw error;
-        console.log('image saved', results.insertId);
+        if(debug) { console.log('image saved', results.insertId); }
       });
     } catch (e) {
       console.error('Common.saveImage', e);

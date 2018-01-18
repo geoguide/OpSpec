@@ -14,6 +14,10 @@ const sanitize = require('sanitize-filename');
 const config = new Config();
 const appData = new AppData();
 const states = appData.states;
+let currentBot = '';
+
+//For development
+const debug = appData.debug;
 
 // TODO: Figure out final bots
 //Telegram Bots
@@ -26,52 +30,89 @@ const snackbot = new TelegramBot(
 
 const player = new Player();
 let messageObj = new Message();
+let finalizeMessage = false;
 
+// Probably make 2 of these, one for scuar and one for SB
+// then just have idle messages for scuar
+// where it has a bunch of things it says as you get defiant
+//For now stuffing them in one is fine
 const responses = {
   0: {
-    title: 'Step 0'
+    title: 'Step 0',
+    bots: ['scuar'],
+    start: [
+      'Please enter your *unique id*'
+    ],
+    inprogress: [
+      'ID Not found, please try again',
+      'That isn\'t a valid ID'
+    ]
   },
   1: {
     title: 'Welcome',
+    bots: ['scuar'],
     start: [
-      'Hello PLAYER_NAME!',
+      'Hello PLAYERNAME!',
       'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!',
       'SCUAR is a brand new ministry called together by your government with your nutritional needs in mind. We’re here to help you understand your family’s alimentary needs and increase access to the foods you love, three times a day, every day!',
       'In this convenient ePacket, you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again!',
-      'https://www.scuar.com/ePacket.pdf'
-    ]
+      'https://www.scuar.com/ePacket.pdf',
+      'When you have reviewed our materials, please respond by confirming the city you will be completing the program in'
+    ],
+    inprogress: [
+      'We don\'t have a program in that city, are you sure you spelled it correctly?'
+    ],
+    problems: [0]
   },
   2: {
     title: 'Demographics',
+    bots: ['scuar'],
     start: [
+      'Oakland! Great. Go Giants!',
       'The high-tech SCUAR department runs exclusively on the newest and most advanced payment techniques.  To register with SCUAR and receive your first meal, please go to the following location: XXXX  To begin you will need $20 in cash, and to download a wallet for your SCUARcoin, which you can download for free here:  XXXXXX',
       'Once you’ve arrived at the registration point, send a text saying “Here”.'
+    ],
+    inprogress: [
+      'We cannot confirm your location to be correct. Please let us know you have arrived at XXXX by texting us "here".'
     ],
     notes: 'after Xms send audio file'
   },
   3: {
     title: 'Bitcoin Orientation',
+    bots: ['scuar', 'snack'],
     start: [
       'Welcome to the SCUAR Machine™, everyone’s favorite high-tech ATM-style futuristic gatekeeper to food security!  Take your $20, put it into the machine, and transfer the coins to your bitcoin wallet.'
+    ],
+    inprogress: [
+      'Just send me the text address and logo for now'
     ],
     notes: 'This step there are two success criteria and the game branches'
   },
   4: {
     title: 'Initiation',
+    bots: ['snack'],
     start: [
       'Password: "full facial"'
+    ],
+    inprogress: [
+      'Have you started your retina scan for meal distribution?'
+    ],
+    inprogress_snack: [
+      'Let me know when you have the code word'
     ],
     notes: 'Send Voice Message about the story of SCUAR',
     termination: 'Give code word to get disguise'
   },
   5: {
     title: 'Observation Mission',
+    bots: ['snack'],
     start: [
       'sneak around audio'
     ]
   },
   6: {
     title: 'Snack Procurment',
+    bots: ['snack'],
     start: [
       'You found all the cameras!  Or maybe you didn’t.  That’s ok.  You can go look for them later.  I’m hungry, aren’t you?  Let’s eat.  Snack Brigade is all about snacking when you feel it. Free Snacks are never truly free, but they are still delicious, and “free” means more than one thing!',
       'Let’s go in this place.  It’s Open.  Keep your disguise on.  This place is heavily surveilled.  Go up to the counter and order the “Special Snack.”  You’ll need to give them some Bitcoin, but you know all about that now.',
@@ -79,14 +120,16 @@ const responses = {
   },
   7: {
     title: 'Plaque',
+    bots: ['snack'],
     start: [
       'Go to Snow Park and find the plaque'
     ]
   },
   8: {
     title: 'Vandalism and debriefing',
+    bots: ['snack'],
     start: [
-
+      'asdfalsdfasdfasdf'
     ]
   }
 };
@@ -101,16 +144,20 @@ const tester = VerEx()
     .maybe('www.')
     .anythingBut(' ')
     .endOfLine();
-
 // Create an example URL
 const testMe = 'https://www.google.com';
-
 // Use RegExp object's native test() function
 if (tester.test(testMe)) {
     console.info('We have a correct URL'); // This output will fire
 } else {
     console.info('The URL is incorrect');
 }
+
+const commandTester = VerEx()
+  .startOfLine()
+  .then('/')
+  .anything()
+  .endOfLine();
 
 //console.log(tester); // Outputs the actual expression used: /^(http)(s)?(\:\/\/)(www\.)?([^\ ]*)$/
 
@@ -129,16 +176,18 @@ function checkState(state) {
 scuar.on('message', (message) => {
   let response = '';
   let starting = false;
-  messageObj = new Message(message);
+  currentBot = 'scuar';
+  const command = commandTester.test(message.text);
 
-  if (message.text === '/start') {
-    starting = true;
+  if(command) {
+    console.log('t was totally a command');
   }
+  messageObj = new Message(message);
 
   //for debugging and getting file ids of uploads
   if (message.from.username === 'zeradin') {
     //Show Message Details
-    console.info(message);
+    if(debug) { console.info(message); }
     //Save all the images
     if(message.photo) {
       const caption = (message.caption) ? message.caption : '';
@@ -146,7 +195,6 @@ scuar.on('message', (message) => {
         Common.saveImage(message.photo[i], caption);
       }
     } else if(message.document) {
-      console.log('save document');
       const caption = (message.caption) ? message.caption : message.document.file_name;
       Common.saveFile(message.document, caption);
     } else if(message.audio) {
@@ -177,133 +225,221 @@ scuar.on('message', (message) => {
   //handle random messages
 
   //send error messages to user
-
   if (starting) {
-    scuar.sendMessage(message.chat.id, 'This should be the first thing I say to you.')
+    scuar.sendMessage(message.chat.id, 'Please enter your *unique code*.', {
+      parse_mode: 'Markdown'
+    })
     .catch(error => console.error(error));
-  } else {
+  } else if(!command) {
     //load user data (will create if load fails)
-    player.load(message.from).then(() => {
-      console.log('player is', player);
-      //console.log('---RESULT HERE', result);
-      return player.checkStepComplete();
-    }).then(result => {
-      const advancing = completedStep();
+    player.load(message.from).then(result => {
+      if(debug) { console.log('player is', player); }
+      if(result === 'new_player') {
+        starting = true;
+      }
+      return completedStep();
+      //return player.checkStepComplete();
+      //Check if the user has completed the step
+    }).then(advanced => {
       //check for progress?
-      if(advancing) {
-        console.info('-- Player HAS completed step');
-        player.state++;
-        player.save();
+      if(!responses[player.state].bots.includes('scuar')) {
+        snackbot.sendMessage(message.chat.id, 'Hey! Don\'t send them that information!')
+          .catch((error) => {
+            console.error(error);
+        });
+        advanced = false;
+      }
+      if(advanced || starting) {
+        if(!starting) {
+          console.info('-- Player HAS completed step');
+          player.state++;
+          player.save();
+        }
+        finalizeMessage = true;
+        response = responses[player.state].start;
       } else {
         console.info('-- Player has NOT completed step');
-      }
-
-      //This stuff needs to be done after the check for it
-      if (player.state === 1) {
-        const msgarray = [];
-        for (let i = 0; i < responses[1].start.length; i++) {
-          const r = personalize(responses[1].start[i]);
-          msgarray.push(r);
+        if(responses[player.state].inprogress) {
+          response = [];
+          response.push(getRandomElement(responses[player.state].inprogress));
+        } else {
+          response = ['I do not know what to say'];
         }
-        sendSeries(msgarray);
-      } else if(player.state === 2) {
-        sendSeries(responses[2].start);
-      } else if(player.state === 3) {
-        scuar.sendAudio(message.chat.id, appData.audio.snack1);
-      } else {
-        response = 'I mean I hear you... I just ain\'t got nothin to say right now';
       }
-      //console.log('after initial load', player);
-      //Always store message - move to after we know what step the user is on
+      //Regardless of if they completed or step or not, send a message
+      const msgarray = [];
+      for (let i = 0; i < response.length; i++) {
+        const r = personalize(response[i]);
+        msgarray.push(r);
+      }
+      sendSeries(msgarray);
       Common.storeMessage(message, player.state, 'SCUARBot');
-      //Do some default thing for now
-      console.log('------- On all text ------');
-      if(response !== '') {
-        console.log('here');
-        scuar.sendMessage(message.chat.id, response)
-        .catch((error) => {
-          console.error(error.code);
-          // => 'ETELEGRAM'
-          console.error(error.response.body);
-          // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
-        });
-      } else {
-        console.log('had nothin');
+    });
+  }
+});
+
+snackbot.on('message', message => {
+  let response = '';
+  let starting = false;
+  currentBot = 'snack';
+  const command = commandTester.test(message.text);
+
+  if(command) {
+    console.log('t was totally a command');
+  }
+  messageObj = new Message(message);
+
+  //for debugging and getting file ids of uploads
+  if (message.from.username === 'zeradin') {
+    //Show Message Details
+    if(debug) { console.info(message); }
+    //Save all the images
+    if(message.photo) {
+      const caption = (message.caption) ? message.caption : '';
+      for (let i = 0; i < message.photo.length; i++) {
+        Common.saveImage(message.photo[i], caption);
       }
-    }).catch((error) => {
-      console.error('error in load', error);
+    } else if(message.document) {
+      const caption = (message.caption) ? message.caption : message.document.file_name;
+      Common.saveFile(message.document, caption);
+    } else if(message.audio) {
+      Common.saveAudio(message.audio);
+    }
+  }
+
+  //send error messages to user
+  if (starting) {
+    snackbot.sendMessage(message.chat.id, 'Please enter your *unique code*.', {
+      parse_mode: 'Markdown'
+    })
+    .catch(error => console.error(error));
+  } else if(!command) {
+    //load user data (will create if load fails)
+    player.load(message.from).then(result => {
+      if(debug) { console.log('player is', player); }
+      if(result === 'new_player') {
+        starting = true;
+      }
+      return completedStep();
+      //return player.checkStepComplete();
+      //Check if the user has completed the step
+    }).then(advanced => {
+      //check for progress?
+      if(!responses[player.state].bots.includes('snack')) {
+        advanced = false;
+        response = [ 'Who are you?! Who sent you?!' ];
+      } else if(advanced || starting) {
+        if(!starting) {
+          console.info('-- Player HAS completed step');
+          player.state++;
+          player.save();
+        }
+        finalizeMessage = true;
+        response = responses[player.state].start;
+      } else {
+        console.info('-- Player has NOT completed step');
+        if(responses[player.state].inprogress_snack) {
+          response = [];
+          response.push(getRandomElement(responses[player.state].inprogress_snack));
+        } else {
+          response = ['I do not know what to say (eat?)'];
+        }
+      }
+      //Regardless of if they completed or step or not, send a message
+      const msgarray = [];
+      for (let i = 0; i < response.length; i++) {
+        const r = personalize(response[i]);
+        msgarray.push(r);
+      }
+      sendSeries(msgarray);
+      Common.storeMessage(message, player.state, 'SCUARBot');
     });
   }
 });
 
 //This can probably be moved to Player
 function completedStep() {
-  let advance = false;
-  console.log('checking completed step: ', messageObj);
-  switch(player.state) {
-    case 0:
-      if(messageObj.text === 'unique id') {
-        advance = true;
-      }
-      break;
-    case 1:
-      if(messageObj.text === 'Oakland') {
-        advance = true;
-      }
-      break;
-    case 2:
-      if(messageObj.text === 'here') {
-        advance = true;
-      }
-      break;
-    case 3:
-      if(messageObj.text === 'address' && 'logo') {
-        advance = true;
-      } else if(messageObj.text === 'logo') {
-        advance = true;
-      }
-      break;
-    case 4:
-      if(messageObj.text === 'photo') {
-        advance = true;
-      }
-      break;
-    case 5:
-      if(messageObj.text === 'number of some sort') {
-        advance = true;
-      }
-      break;
-    case 6:
-      if(messageObj.text === 'banana') {
-        advance = true;
-      }
-      break;
-    case 7:
-      if(messageObj.text === 'long may he floss') {
-        advance = true;
-      }
-      break;
-    case 8:
-      break;
-    default:
-      advance = false;
-  }
+  const self = this;
+  const playerMsg = messageObj.text;
+  const advance = new Promise((resolve, reject) => {
+    switch(player.state) {
+      case 0:
+        if(messageObj.text === 'unique id') {
+          resolve(true);
+        }
+        break;
+      case 1:
+        if(playerMsg.toLowerCase().includes('oakland')) {
+          resolve(true);
+        }
+        break;
+      case 2:
+        if(messageObj.text === 'here') {
+          resolve(true);
+        }
+        break;
+      case 3:
+        if(messageObj.text.includes('address') && playerMsg.includes('logo')) {
+          resolve(true);
+        }
+        break;
+      case 4:
+        if(messageObj.text === 'photo') {
+          resolve(true);
+        }
+        break;
+      case 5:
+        if(messageObj.text === 'number of some sort') {
+          resolve(true);
+        }
+        break;
+      case 6:
+        if(messageObj.text === 'banana') {
+          resolve(true);
+        }
+        break;
+      case 7:
+        if(messageObj.text === 'long may he floss') {
+          resolve(true);
+        }
+        break;
+      case 8:
+      resolve(true);
+        break;
+      default:
+        resolve(true);
+    }
+    resolve(false);
+  }).catch(error => {
+    console.error(error);
+    //reject(error);
+  });
   return advance;
 }
 
 function personalize(r) {
   let result = r;
   if (messageObj.from.first_name && messageObj.from.first_name !== '') {
-      result = r.replace(/PLAYER_NAME/g, messageObj.from.first_name);
+    result = r.replace(/PLAYERNAME/g, messageObj.from.first_name);
   } else {
-    result = r.replace(/PLAYER_NAME/g, 'citizen');
+    result = r.replace(/PLAYERNAME/g, 'citizen');
   }
   return result;
 }
 
 function sendMessage(m) {
-  console.log('called for ', m);
-  return scuar.sendMessage(messageObj.chat.id, m).catch(error => console.error(error));
+  if(currentBot == 'scuar') {
+    return scuar.sendMessage(messageObj.chat.id, m, {
+      parse_mode: 'Markdown'
+    }).catch(error => console.error(error));
+  }
+  return snackbot.sendMessage(messageObj.chat.id, m, {
+    parse_mode: 'Markdown'
+  }).catch(error => console.error(error));
+}
+
+function getRandomElement(items) {
+  return items[Math.floor(Math.random() * items.length)];
 }
 
 /* Not actually series but accounts for telegram's random delays */
@@ -312,26 +448,6 @@ function sendSeries(messageArray) {
     setTimeout(sendMessage, i * 1000, messageArray[i]);
   }
 }
-
-snackbot.on('message', (message) => {
-  //load user data (will create if load fails)
-  player.load(message.from).then((result) => {
-    //console.log('after initial load', player, 'result was', result);
-    //Always store message
-    Common.storeMessage(message, player.state, 'Snackbot');
-  }).catch((error) => {
-    console.error('error in catch', error);
-  });
-
-  //Do some default thing for now
-  console.log('------- On all text ------');
-	snackbot.sendMessage(message.chat.id, 'I am SnackBot').catch((error) => {
-		console.trace(error.code);
-      // => 'ETELEGRAM'
-		console.trace(error.response.body);
-      // => { ok: false, error_code: 400, description: 'Bad Request: chat not found' }
-	});
-});
 
 //dumbest thing
 scuar.onText(/\/echo (.+)/, (msg, match) => {
@@ -345,7 +461,7 @@ scuar.onText(/\/snack (.+)/, (msg, match) => {
 });
 
 scuar.onText(/^\/(state) (.+)/i, (msg, match) => {
-  console.log('------- set state ------');
+  console.log('------- scuar set state ------');
   const state = parseInt(match[2],10);
   if (checkState(state)) {
     player.setState(state).then((result) => {
@@ -400,8 +516,8 @@ scuar.onText(/^\/(reset)/i, (msg, match) => {
 });*/
 
 scuar.onText(/^\/(checkup)/i, (msg, match) => {
-  console.log('------- checking player ------');
-  player.load(msg.from).then((result) => {
+  if(debug) { console.log('------- checking player ------'); }
+  player.load(msg.from).then(() => {
     let message = '';
     if (checkState(player.state)) {
       message = `your state is set to *${player.state}: ${states[player.state].title}*`;

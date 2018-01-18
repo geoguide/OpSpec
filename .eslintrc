@@ -12,7 +12,8 @@
       "space-before-blocks": 1,
       "camelcase": 0,
       "keyword-spacing": 0,
-      "prefer-const": 1
+      "prefer-const": 1,
+      "max-len": 1
   },
   "plugins": [
   ]
