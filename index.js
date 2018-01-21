@@ -106,46 +106,22 @@ scuar.on('message', (message) => {
     }
   }
 
-  // Should probably make this a class
-  // - with variables like (starting, comm complete etc)
-  // - card with qr code but also start code
-  // - completed communication
-  // - - then start off with check starting
-  // - - - then conditionally send to check completed then send to
-  // - - - make function that we can message bot to send players messages
-  // - - - and also send everyone at a certain state a message
-
-  //What if they aren't a player?!
-
-  //if just starting
-
-  //have they completed current step?
-
-  //handle specific messages
-
-  //does this step have anything to say to what they've said?
-  // - do where do i go?
-
-  //handle random messages
-
   //send error messages to user
-  if (starting) {
-    scuar.sendMessage(message.chat.id, 'Please enter your *unique code*.', {
-      parse_mode: 'Markdown'
-    })
-    .catch(error => console.error(error));
-  } else if(!command) {
+  if(!command) {
     //load user data (will create if load fails)
     player.load(message.from).then(result => {
       if(debug) { console.log('player is', player); }
       if(result === 'new_player') {
+        //this should never happen
         starting = true;
       }
+
       return completedStep();
       //return player.checkStepComplete();
       //Check if the user has completed the step
     }).then(advanced => {
       //check for progress?
+      console.log('player', player);
       if(!responses[player.state].bots.includes('scuar')) {
         snackbot.sendMessage(message.chat.id, 'Hey! Don\'t send them that information!')
           .catch((error) => {
@@ -182,6 +158,8 @@ scuar.on('message', (message) => {
   }
 });
 
+
+//Snackbot not commands
 snackbot.on('message', message => {
   let response = '';
   let starting = false;
@@ -357,6 +335,22 @@ function sendSeries(messageArray) {
 scuar.onText(/\/echo (.+)/, (msg, match) => {
 	scuar.sendMessage(msg.chat.id, match[2]);
 });
+
+scuar.onText(/\/start/, (message, match) => {
+  scuar.sendMessage(message.chat.id, 'Please enter your *unique code*.', {
+    parse_mode: 'Markdown'
+  });
+});
+
+snackbot.onText(/\/tell_user (\w+) (.+)/, (msg, match) => {
+  const user = match[1];
+  const message = match[2];
+  console.log(match);
+  console.info('tell', user, 'this:', message);
+  // Maybe add user contacted and wait for specific responses
+	scuar.sendMessage(user, message, { parse_mode: 'Markdown' }).catch(error => console.error(error));
+});
+
 
 scuar.onText(/\/snack (.+)/, (msg, match) => {
   //console.log('msg was ', msg);

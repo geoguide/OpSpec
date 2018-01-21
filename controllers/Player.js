@@ -35,7 +35,10 @@ class Player {
               resolve(true);
             } else {
               console.log('- Player not found, creating');
-              self.create(playerObj).then(() => resolve('new_player'));
+              self.create(playerObj)
+                .then(() => self.load(playerObj))
+                .then(() => resolve('new_player'))
+                .catch(createchainerror => console.error(createchainerror));
             }
           }
         );
