@@ -1,7 +1,9 @@
 import mysql from 'mysql2';
 import Config from '../config.js';
+import Common from './Common';
 
 const config = new Config();
+const debug = config.debug;
 
 // create the connection to database
 // TODO: move to own file and add environment variables
@@ -36,6 +38,7 @@ class Message {
         };
         this.date = props.date;
         this.text = props.text;
+        this.photo = props.photo;
         //console.log('Message.js says', JSON.stringify(this, 2));
       }
     } catch (e) {
@@ -46,10 +49,12 @@ class Message {
   /* TODO figure out how to make this work best */
   saveMessage(data, state, bot = 'none') {
     console.log('------- store message called -------');
+    console.log('------', data);
     try {
       connection.query('INSERT INTO messages SET ?', {
         player_id: data.from.id,
         message_id: data.message_id,
+        chat_id: data.chat.id,
         message: data.text,
         telegram_id: data.from.id,
         state,
@@ -60,6 +65,23 @@ class Message {
       });
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  handleAdminMessage(message) {
+    //Show Message Details
+    if(debug) { console.info(message); }
+    //Save all the images
+    if(message.photo) {
+      const caption = (message.caption) ? message.caption : '';
+      for (let i = 0; i < message.photo.length; i++) {
+        Common.saveImage(message.photo[i], caption);
+      }
+    } else if(message.document) {
+      const caption = (message.caption) ? message.caption : message.document.file_name;
+      Common.saveFile(message.document, caption);
+    } else if(message.audio) {
+      Common.saveAudio(message.audio);
     }
   }
 }

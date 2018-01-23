@@ -27,11 +27,15 @@ class Player {
             if (results.length > 0) {
               const result = results[0];
               self.id = result.id;
+              self.admin = result.admin;
+              self.scuarbot = result.scuarbot;
+              self.snackbot = result.snackbot;
               self.telegram_id = result.id;
               self.username = result.username;
               self.first_name = result.first_name;
               self.last_name = result.last_name;
               self.state = result.state;
+              self.substate = result.substate;
               resolve(true);
             } else {
               console.log('- Player not found, creating');
@@ -65,6 +69,7 @@ class Player {
           self.first_name = playerObj.first_name;
           self.last_name = playerObj.last_name;
           self.state = playerObj.state;
+          self.substate = playerObj.substate;
           resolve(results.insertId);
         });
       } catch (e) {
@@ -80,8 +85,9 @@ class Player {
     const save = new Promise((resolve, reject) => {
       try {
         connection.query(
-          'UPDATE `players` SET `first_name` = ?, `last_name` = ?, `state` = ? WHERE id = ?',
-          [self.first_name, self.last_name, self.state, self.id],
+          'UPDATE `players` SET '
+          + '`first_name` = ?, `last_name` = ?, `state` = ?, substate = ? WHERE id = ?',
+          [self.first_name, self.last_name, self.state, self.substate, self.id],
           (error) => {
             if (error) throw error;
             resolve(true);
@@ -95,12 +101,42 @@ class Player {
     return save;
   }
 
+  setContactedBot(bot) {
+    const self = this;
+    let sql = '';
+
+    const update = new Promise((resolve, reject) => {
+      try {
+        if(bot === 'snackbot') {
+          sql = 'UPDATE `players` SET `snackbot` = 1 WHERE id = ?';
+        } else if(bot === 'scuarbot') {
+          sql = 'UPDATE `players` SET `scuarbot` = 1 WHERE id = ?';
+        } else {
+          throw Error('setContactedBot: invalid bot!');
+        }
+        connection.query(
+          sql,
+          [self.id],
+          (error) => {
+            if (error) throw error;
+            resolve(true);
+          }
+        );
+      } catch (e) {
+        console.error('Player.setContactedBot', e);
+        reject(e);
+      }
+    });
+    return update;
+  }
+
   setState(state) {
     const self = this;
+    self.state = state;
     const load = new Promise((resolve, reject) => {
       try {
         connection.query(
-          'UPDATE `players` SET `state` = ? WHERE id = ?',
+          'UPDATE `players` SET `state` = ?, substate = 0 WHERE id = ?',
           [state, self.id],
           (error) => {
             if (error) throw error;
@@ -116,7 +152,29 @@ class Player {
     return load;
   }
 
-  /* More programmatically advantageous system for v1 */
+  //meh
+  setSubState(substate) {
+    const self = this;
+    self.substate = substate;
+    const load = new Promise((resolve, reject) => {
+      try {
+        connection.query(
+          'UPDATE `players` SET `substate` = ? WHERE id = ?',
+          [substate, self.id],
+          (error) => {
+            if (error) throw error;
+            resolve(true);
+          }
+        );
+      } catch (e) {
+        console.error('Player.setState', e);
+        reject(e);
+      }
+    });
+    return load;
+  }
+
+  /* More programmatically advantageous system for v2 */
   getSuccessCriteria() {
     const self = this;
     const save = new Promise((resolve, reject) => {

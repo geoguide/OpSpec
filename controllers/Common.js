@@ -1,5 +1,7 @@
-const mysql = require('mysql2');
+import VerEx from 'verbal-expressions';
 import AppData from '../data/AppData';
+
+const mysql = require('mysql2');
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -12,12 +14,30 @@ const appData = new AppData();
 const debug = appData.debug;
 
 class Common {
+  constructor() {
+    this.commandTester = VerEx()
+      .startOfLine()
+      .then('/')
+      .anything()
+      .endOfLine();
+    this.urlTester = VerEx()
+        .startOfLine()
+        .then('http')
+        .maybe('s')
+        .then('://')
+        .maybe('www.')
+        .anythingBut(' ')
+        .endOfLine();
+    //console.log(this.urlTester); //returns the resulting regex
+  }
+
   static storeMessage(data, state, bot = 'none') {
     if(debug) { console.log('------- store message called -------'); }
     try {
       connection.query('INSERT INTO messages SET ?', {
         player_id: data.from.id,
         message_id: data.message_id,
+        chat_id: data.chat.id,
         message: data.text,
         telegram_id: data.from.id,
         state,
@@ -84,6 +104,10 @@ class Common {
     } catch (e) {
       console.error('Common.saveImage', e);
     }
+  }
+
+  static getRandomElement(items) {
+    return items[Math.floor(Math.random() * items.length)];
   }
 }
 
