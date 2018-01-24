@@ -2,8 +2,8 @@ ssh ubuntu@52.25.136.246 <<EOF
  cd /home/ubuntu/OpSpec
  git pull origin master
  npm install --production
- npm start
+ npm build
  pm2 kill
- NODE_ENV=prod pm2 start index.js
+ NODE_ENV=prod pm2 start dist/index.js
  exit
 EOF
