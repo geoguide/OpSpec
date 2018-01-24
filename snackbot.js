@@ -192,9 +192,8 @@ function completedStep() {
         resolve(responseObject[8].snack.idle);
         break;
       default:
-        resolve(['what in the fuck']);
+        resolve(['Tell me how you got here']);
     }
-    resolve(false);
   }).catch(error => {
     console.error(error);
     //reject(error);
@@ -203,7 +202,7 @@ function completedStep() {
 }
 
 
-/* The Following is Temporary Duplication */
+/* The Following are Temporary Duplication */
 function checkState(state) {
   let valid = false;
   if (responseObject[state]) {

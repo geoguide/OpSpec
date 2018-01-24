@@ -63,3 +63,5 @@ dist/*
 
 #sensitive
 config.js
+config.dev.js
+config.live.js
