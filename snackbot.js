@@ -14,8 +14,7 @@ const sanitize = require('sanitize-filename');
 const config = new Config();
 const appData = new AppData();
 const common = new Common();
-const responseObject = appData.states;
-let currentBot = '';
+const { responseObject } = appData;
 
 //For development
 const debug = appData.debug;
@@ -23,100 +22,52 @@ const debug = appData.debug;
 const player = new Player();
 let messageObj = new Message();
 
-// Probably make 2 of these, one for scuar and one for SB
-// then just have idle messages for scuar
-// where it has a bunch of things it says as you get defiant
-//For now stuffing them in one is fine
-const responses = appData.states;
-
 const snackbot = new TelegramBot(
   config.bots.snackbot.key,
   { polling: true }
 );
 
+//Event Handlers
 Emitter.on('snack_say', (chatId, message) => {
   snackbot.sendMessage(chatId, message, { parse_mode: 'Markdown' })
     .catch(error => console.error(error));
 });
 
-//Snackbot not commands
-snackbot.on('message', message => {
-  let response = '';
-  let starting = false;
-  currentBot = 'snack';
-  let finalizeMessage = false;
+//Every Message
+//maybe not check for command and just handle admin/stuff that doesn't affect anything.
+snackbot.on('message', (message) => {
   const command = common.commandTester.test(message.text);
-
-  if(command) {
-    console.log('snack got a command');
-  }
   messageObj = new Message(message);
 
-  //for debugging and getting file ids of uploads
-  if (message.from.username === 'zeradin') {
-    //Show Message Details
-    if(debug) { console.info(message); }
-    //Save all the images
-    if(message.photo) {
-      const caption = (message.caption) ? message.caption : '';
-      for (let i = 0; i < message.photo.length; i++) {
-        Common.saveImage(message.photo[i], caption);
-      }
-    } else if(message.document) {
-      const caption = (message.caption) ? message.caption : message.document.file_name;
-      Common.saveFile(message.document, caption);
-    } else if(message.audio) {
-      Common.saveAudio(message.audio);
-    }
-  }
-
   //send error messages to user
-  if (starting) {
-    snackbot.sendMessage(message.chat.id, 'Please enter your *unique code*.', {
-      parse_mode: 'Markdown'
-    })
-    .catch(error => console.error(error));
-  } else if(!command) {
+  if(!command) {
     //load user data (will create if load fails)
-    player.load(message.from).then(result => {
+    player.load(message.from).then(() => {
       if(debug) { console.log('player is', player); }
-      if(result === 'new_player') {
-        starting = true;
+      //we can use emits for this stuff so we don't have to rewrite them
+      //otherwise they should just be handled in objects
+      if(player.admin === 1) {
+        messageObj.handleAdminMessage(message);
       }
+      //emit('bot contacted', 'scuarbot');
+      if(player.snackbot === 0) {
+        player.setContactedBot('snackbot');
+      }
+      Common.storeMessage(message, player.state, 'SCUARBot');
+      //has the player completed the step?
       return completedStep();
-      //return player.checkStepComplete();
-      //Check if the user has completed the step
-    }).then(advanced => {
-      //check for progress?
-      let progress = advanced;
-      if(!responses[player.state].bots.includes('snack')) {
-        progress = false;
-        response = ['Who are you?! Who sent you?!'];
-      } else if(progress || starting) {
-        if(!starting) {
-          console.info('-- Player HAS completed step');
-          player.state++;
-          player.save();
+    }).then(responseArray => {
+      console.log('ra', responseArray);
+      if(responseArray) {
+        const msgarray = [];
+        for (let i = 0; i < responseArray.length; i++) {
+          const r = personalize(responseArray[i]);
+          msgarray.push(r);
         }
-        finalizeMessage = true;
-        response = responses[player.state].start;
-      } else {
-        console.info('-- Player has NOT completed step');
-        if(responses[player.state].inprogress_snack) {
-          response = [];
-          response.push(Common.getRandomElement(responses[player.state].inprogress_snack));
-        } else {
-          response = ['I do not know what to say (eat?)'];
-        }
+        sendSeries(msgarray);
       }
-      //Regardless of if they completed or step or not, send a message
-      const msgarray = [];
-      for (let i = 0; i < response.length; i++) {
-        const r = personalize(response[i]);
-        msgarray.push(r);
-      }
-      sendSeries(msgarray);
-      Common.storeMessage(message, player.state, 'snackbot');
+    }).catch(error => {
+      console.error(error);
     });
   }
 });
@@ -126,9 +77,11 @@ snackbot.onText(/\/tell_user (\w+) (.+)/, (msg, match) => {
   const message = match[2];
   console.info('tell', user, 'this:', message);
   // Maybe add user contacted and wait for specific responses
-	snackbot.sendMessage(user, message, { parse_mode: 'Markdown' }).catch(error => console.error(error));
+	snackbot.sendMessage(user, message, { parse_mode: 'Markdown' })
+    .catch(error => console.error(error));
 });
 
+//TODO make all of these common
 function personalize(r) {
   let result = r;
   if (messageObj.from.first_name && messageObj.from.first_name !== '') {
@@ -146,64 +99,100 @@ function sendSeries(messageArray) {
 }
 
 function sendMessage(m) {
-  if(currentBot === 'snackbot') {
-    return snackbot.sendMessage(messageObj.chat.id, m, {
-      parse_mode: 'Markdown'
-    }).catch(error => console.error(error));
-  }
+  return snackbot.sendMessage(messageObj.chat.id, m, {
+    parse_mode: 'Markdown'
+  }).catch(error => console.error(error));
 }
 
 //This can probably be moved to Player
 function completedStep() {
-  const self = this;
-  const playerMsg = messageObj.text;
+  const { text } = messageObj;
+  const { state, substate } = player;
+  console.log('state is', state);
   const advance = new Promise((resolve, reject) => {
     switch(player.state) {
       case 0:
-        if(messageObj.text === 'unique id') {
-          resolve(true);
+        if(player.scuar) {
+          resolve(['You shouldn\'t be talking to me']);
+        } else {
+          resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 1:
-        if(playerMsg.toLowerCase().includes('oakland')) {
-          resolve(true);
+        if(player.scuar) {
+          resolve(['You shouldn\'t be talking to me']);
+        } else {
+          resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 2:
-        if(messageObj.text === 'here') {
-          resolve(true);
+        if(player.scuar) {
+          resolve(['You shouldn\'t be talking to me']);
+        } else {
+          resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 3:
-        if(messageObj.text.includes('address') && playerMsg.includes('logo')) {
-          resolve(true);
+        if(player.scuar) {
+          resolve(['You shouldn\'t be talking to me']);
+        } else {
+          resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 4:
-        if(messageObj.text === 'photo') {
-          resolve(true);
+        if(messageObj.photo) {
+          console.log('you won and now doing things...');
+          //WIN
+          player.state += 1;
+          player.save().then(() => {
+            return snackbot.sendAudio(messageObj.chat.id, 'CQADAQADGQAD1dFARzUvN20cggnUAg');
+          }).then(() => {
+              resolve(false);
+          });
+        } else {
+          resolve(responseObject[4].snack.idle);
         }
         break;
       case 5:
-        if(messageObj.text === 'number of some sort') {
-          resolve(true);
+        if((parseInt(text, 10) > 3 && parseInt(text, 10) < 7)
+          || imatch(text, 'four')
+          || imatch(text, 'five')
+          || imatch(text, 'six')) {
+          //WIN
+          player.state += 1;
+          player.save();
+          resolve(responseObject[6].snack.start);
+        } else {
+          resolve(responseObject[5].snack.idle);
         }
         break;
       case 6:
-        if(messageObj.text === 'banana') {
-          resolve(true);
+        console.log('state 6');
+        if(imatch(text, 'banana')) {
+          player.state += 1;
+          player.save();
+          console.log('sending', responseObject[7].snack.start);
+          resolve(responseObject[7].snack.start);
+          console.log('did we get past this somehow');
+        } else {
+          console.log('did not match');
+          resolve(responseObject[6].snack.idle);
         }
         break;
       case 7:
-        if(messageObj.text === 'long may he floss') {
-          resolve(true);
+        if(imatch(text, 'long may he floss')) {
+          player.state += 1;
+          player.save();
+          resolve(responseObject[8].snack.start);
+        } else {
+          resolve(responseObject[7].snack.idle);
         }
         break;
       case 8:
-      resolve(true);
+        resolve(responseObject[8].snack.idle);
         break;
       default:
-        resolve(true);
+        resolve(['what in the fuck']);
     }
     resolve(false);
   }).catch(error => {
@@ -211,4 +200,57 @@ function completedStep() {
     //reject(error);
   });
   return advance;
+}
+
+
+/* The Following is Temporary Duplication */
+function checkState(state) {
+  let valid = false;
+  if (responseObject[state]) {
+    valid = true;
+  }
+  return valid;
+}
+
+snackbot.onText(/^\/(checkup)/i, (msg) => {
+  if(debug) { console.log('------- checking player ------'); }
+  player.load(msg.from).then(() => {
+    let message = '';
+    if (checkState(player.state)) {
+      message = `your state is set to *${player.state}: ${responseObject[player.state].title}*`;
+    } else {
+      message = `your state is MESSED UP *${player.state}*`;
+    }
+
+    snackbot.sendMessage(msg.chat.id, message, {
+      parse_mode: 'Markdown'
+    });
+  }).catch((error) => console.error(error));
+});
+
+snackbot.onText(/^\/(state) (.+)/i, (msg, match) => {
+  console.log('------- snack set state ------');
+  const state = parseInt(match[2], 10);
+  if (checkState(state)) {
+    player.setState(state).then(() => {
+      const stateInfo = responseObject[player.state];
+      snackbot.sendMessage(msg.chat.id,
+        `your state is set to *${player.state}: ${stateInfo.title}*`, {
+          parse_mode: 'Markdown'
+      });
+      //console.log('state player', player);
+    }).catch((error) => console.error(error));
+  } else {
+    snackbot.sendMessage(msg.chat.id, `requested state (${state}) is *INVALID*`, {
+      parse_mode: 'Markdown'
+    });
+  }
+});
+
+function imatch(msg, goal) {
+  return (msg.toLowerCase() === goal.toLowerCase());
+}
+
+function iincludes(msg, goal) {
+  return msg.toLowerCase().includes(goal.toLowerCase());
 }

@@ -81,7 +81,10 @@ class Message {
       const caption = (message.caption) ? message.caption : message.document.file_name;
       Common.saveFile(message.document, caption);
     } else if(message.audio) {
-      Common.saveAudio(message.audio);
+      const audioSave = message.audio;
+      audioSave.title = message.caption;
+      console.log('saving audio', message);
+      Common.saveAudio(audioSave);
     }
   }
 }

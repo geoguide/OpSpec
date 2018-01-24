@@ -147,7 +147,7 @@ class AppData {
             'I\'m broken'
           ],
           idle: [
-            'I\'m broken!'
+            'Have you started your facial scan for meal distribution?'
           ]
         },
         snack: {
@@ -155,7 +155,7 @@ class AppData {
             'Password: "full facial"'
           ],
           idle: [
-            'Have you started your retina scan for meal distribution?'
+            'That\'s not your face!'
           ]
         },
         idle_snack: [
@@ -180,7 +180,7 @@ class AppData {
             'sneak around audio'
           ],
           idle: [
-            'blah blah blah'
+            'How many cameras did you see?'
           ]
         }
       },
@@ -199,6 +199,9 @@ class AppData {
           start: [
             'You found all the cameras!  Or maybe you didn’t.  That’s ok.  You can go look for them later.  I’m hungry, aren’t you?  Let’s eat.  Snack Brigade is all about snacking when you feel it. Free Snacks are never truly free, but they are still delicious, and “free” means more than one thing!',
             'Let’s go in this place.  It’s Open.  Keep your disguise on.  This place is heavily surveilled.  Go up to the counter and order the “Special Snack.”  You’ll need to give them some Bitcoin, but you know all about that now.',
+          ],
+          idle: [
+            'snack idle 6'
           ]
         }
       },
@@ -218,7 +221,7 @@ class AppData {
             'Go to Snow Park and find the plaque'
           ],
           idle: [
-            'blah blah'
+            'Whaaaat is the plaque'
           ]
         }
       },
@@ -235,10 +238,10 @@ class AppData {
         },
         snack: {
           start: [
-            'asdfalsdfasdfasdf'
+            'You won?'
           ],
           idle: [
-            'blah blah'
+            'You already won. Go tell a friend'
           ]
         }
       },

@@ -89,6 +89,7 @@ class Common {
 
   static saveAudio(audioData) {
     if(debug) { console.log('------- store audio called -------'); }
+    console.log('audio data', audioData);
     const { file_id, file_size, title = null, mime_type, duration } = audioData;
     try {
       connection.query('INSERT INTO audio SET ?', {

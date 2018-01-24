@@ -26,7 +26,9 @@ const player = new Player();
 let messageObj = new Message();
 
 // TODO: Figure out final bots vs development bots
-const scuar = new TelegramBot(config.bots.scuar.key, { polling: true });
+const scuar = new TelegramBot(config.bots.scuar.key, {
+  polling: true
+});
 
 //Ethereum
 const web3 = new Web3();
@@ -56,12 +58,14 @@ scuar.on('message', (message) => {
       return completedStep();
     }).then(responseArray => {
       console.log('ra', responseArray);
-      const msgarray = [];
-      for (let i = 0; i < responseArray.length; i++) {
-        const r = personalize(responseArray[i]);
-        msgarray.push(r);
+      if(responseArray) {
+        const msgarray = [];
+        for (let i = 0; i < responseArray.length; i++) {
+          const r = personalize(responseArray[i]);
+          msgarray.push(r);
+        }
+        sendSeries(msgarray);
       }
-      sendSeries(msgarray);
     }).catch(error => {
       console.error(error);
     });
