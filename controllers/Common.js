@@ -4,9 +4,10 @@ import AppData from '../data/AppData';
 const mysql = require('mysql2');
 
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  database: 'snack_brigade'
+  host: config.mysql.host,
+  user: config.mysql.user,
+  database: config.mysql.database,
+  password: config.mysql.password
 });
 
 const appData = new AppData();
