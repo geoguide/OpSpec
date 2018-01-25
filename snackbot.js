@@ -114,7 +114,7 @@ function completedStep() {
         if(player.scuar) {
           resolve(['You shouldn\'t be talking to me']);
         } else {
-          resolve(['You still haven\'t contacted scuar']);
+          resolve(['You still haven\'t contacted scuar!']);
         }
         break;
       case 1:
