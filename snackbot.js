@@ -112,28 +112,28 @@ function completedStep() {
     switch(player.state) {
       case 0:
         if(player.scuar) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to me (step 0)']);
         } else {
           resolve(['You still haven\'t contacted scuar!']);
         }
         break;
       case 1:
         if(player.scuar) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to me (step 1)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 2:
         if(player.scuar) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to me (step 2)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 3:
         if(player.scuar) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to me (step 3)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
@@ -144,7 +144,7 @@ function completedStep() {
           //WIN
           player.state += 1;
           player.save().then(() => {
-            return snackbot.sendAudio(messageObj.chat.id, 'CQADAQADGQAD1dFARzUvN20cggnUAg');
+            return snackbot.sendAudio(messageObj.chat.id, 'http://www.snackbrigade.com/assets/Sound%20Check%20-%20Over-Here.mp3');
           }).then(() => {
               resolve(false);
           });
