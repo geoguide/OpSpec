@@ -61,7 +61,7 @@ class Message {
         bot
       }, (error, results) => {
         if (error) throw error;
-        console.log('message inserted', results.insertId);
+        if(debug) { console.log('message inserted', results.insertId); }
       });
     } catch (e) {
       console.error(e);

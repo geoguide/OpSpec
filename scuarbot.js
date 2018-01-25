@@ -57,7 +57,6 @@ scuar.on('message', (message) => {
       //has the player completed the step?
       return completedStep();
     }).then(responseArray => {
-      console.log('ra', responseArray);
       if(responseArray) {
         const msgarray = [];
         for (let i = 0; i < responseArray.length; i++) {

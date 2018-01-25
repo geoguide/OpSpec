@@ -57,7 +57,6 @@ snackbot.on('message', (message) => {
       //has the player completed the step?
       return completedStep();
     }).then(responseArray => {
-      console.log('ra', responseArray);
       if(responseArray) {
         const msgarray = [];
         for (let i = 0; i < responseArray.length; i++) {
@@ -108,7 +107,7 @@ function sendMessage(m) {
 function completedStep() {
   const { text } = messageObj;
   const { state, substate } = player;
-  console.log('state is', state);
+
   const advance = new Promise((resolve, reject) => {
     switch(player.state) {
       case 0:

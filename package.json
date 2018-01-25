@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf dist/ && babel -w ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./dist --copy-files --source-maps && ls",
-    "start": "npm run build && pm2 kill && pm2 start dist/index.js --watch && pm2 logs"
+    "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./dist --copy-files --source-maps",
+    "build-watch": "rimraf -w dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./dist --copy-files --source-maps",
+    "start": "npm run build-watch && pm2 kill && pm2 start dist/index.js --watch && pm2 logs"
   },
   "repository": {
     "type": "git",
