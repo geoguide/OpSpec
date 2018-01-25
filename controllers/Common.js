@@ -1,8 +1,10 @@
 import VerEx from 'verbal-expressions';
 import AppData from '../data/AppData';
+import Config from '../config.js';
 
 const mysql = require('mysql2');
 
+const config = new Config();
 const connection = mysql.createConnection({
   host: config.mysql.host,
   user: config.mysql.user,
