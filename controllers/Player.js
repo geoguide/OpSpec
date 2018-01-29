@@ -101,6 +101,25 @@ class Player {
     return save;
   }
 
+  delete() {
+    const self = this;
+    const del = new Promise((resolve, reject) => {
+      try {
+        connection.query(
+          'DELETE FROM `players` WHERE id = ?', [self.id],
+          (error) => {
+            if (error) throw error;
+            resolve(true);
+          }
+        );
+      } catch (e) {
+        console.error('Player.delete', e);
+        reject(e);
+      }
+    });
+    return del;
+  }
+
   setContactedBot(bot) {
     const self = this;
     let sql = '';
@@ -135,7 +154,7 @@ class Player {
     self.state = state;
     const load = new Promise((resolve, reject) => {
       try {
-        connection.query(
+        const query = connection.query(
           'UPDATE `players` SET `state` = ?, substate = 0 WHERE id = ?',
           [state, self.id],
           (error) => {
@@ -144,6 +163,7 @@ class Player {
             resolve(true);
           }
         );
+        console.log(query.sql);
       } catch (e) {
         console.error('Player.setState', e);
         reject(e);

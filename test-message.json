@@ -49,3 +49,44 @@ photo-upload:
        file_size: 214838,
        width: 1280,
        height: 960 } ] }
+
+
+wave upload: { id: 422677320,
+0|index    |      is_bot: false,
+0|index    |      first_name: 'Geoff',
+0|index    |      last_name: 'Guide',
+0|index    |      username: 'zeradin',
+0|index    |      language_code: 'en-US' },
+0|index    |   chat:
+0|index    |    { id: 422677320,
+0|index    |      first_name: 'Geoff',
+0|index    |      last_name: 'Guide',
+0|index    |      username: 'zeradin',
+0|index    |      type: 'private' },
+0|index    |   date: 1517184273,
+0|index    |   document:
+0|index    |    { file_name: 'Snare02.wav',
+0|index    |      mime_type: 'audio/x-wav',
+0|index    |      file_id: 'BQADAQADHgAD7uZ5R7lwORg6so19Ag',
+0|index    |      file_size: 127544 } }
+
+Voice:
+0|index    |   from:
+0|index    |    { id: 422677320,
+0|index    |      is_bot: false,
+0|index    |      first_name: 'Geoff',
+0|index    |      last_name: 'Guide',
+0|index    |      username: 'zeradin',
+0|index    |      language_code: 'en-US' },
+0|index    |   chat:
+0|index    |    { id: 422677320,
+0|index    |      first_name: 'Geoff',
+0|index    |      last_name: 'Guide',
+0|index    |      username: 'zeradin',
+0|index    |      type: 'private' },
+0|index    |   date: 1517184362,
+0|index    |   voice:
+0|index    |    { duration: 1,
+0|index    |      mime_type: 'audio/ogg',
+0|index    |      file_id: 'AwADAQADHwAD7uZ5RznMVAkuuVPvAg',
+0|index    |      file_size: 4250 } }

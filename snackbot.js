@@ -5,7 +5,6 @@ import Config from './config';
 import AppData from './data/AppData';
 import Emitter from './controllers/Emitter';
 
-
 const TelegramBot = require('node-telegram-bot-api');
 const qr = require('qr-image');
 const fs = require('fs');
@@ -28,7 +27,7 @@ const snackbot = new TelegramBot(
 );
 
 //Event Handlers
-Emitter.on('snack_say', (chatId, message) => {
+Emitter.on('snack', (chatId, message) => {
   snackbot.sendMessage(chatId, message, { parse_mode: 'Markdown' })
     .catch(error => console.error(error));
 });
@@ -38,22 +37,20 @@ Emitter.on('snack_say', (chatId, message) => {
 snackbot.on('message', (message) => {
   const command = common.commandTester.test(message.text);
   messageObj = new Message(message);
-
+  messageObj.toBot = 'snack';
   //send error messages to user
-  if(!command) {
+  if(!command && !messageObj.handleSpecific(messageObj)) {
     //load user data (will create if load fails)
     player.load(message.from).then(() => {
       if(debug) { console.log('player is', player); }
       //we can use emits for this stuff so we don't have to rewrite them
       //otherwise they should just be handled in objects
-      if(player.admin === 1) {
-        messageObj.handleAdminMessage(message);
-      }
+      messageObj.handleMediaMessage(message, player.admin, 'snack');
       //emit('bot contacted', 'scuarbot');
       if(player.snackbot === 0) {
         player.setContactedBot('snackbot');
       }
-      Common.storeMessage(message, player.state, 'SCUARBot');
+      Common.storeMessage(message, player.state, 'Snackbot');
       //has the player completed the step?
       return completedStep();
     }).then(responseArray => {
@@ -111,28 +108,29 @@ function completedStep() {
   const advance = new Promise((resolve, reject) => {
     switch(player.state) {
       case 0:
-        if(player.scuar) {
+        if(player.scuarbot) {
           resolve(['You shouldn\'t be talking to me (step 0)']);
         } else {
           resolve(['You still haven\'t contacted scuar!']);
         }
         break;
       case 1:
-        if(player.scuar) {
+        if(player.scuarbot === 1) {
+          console.log('1');
           resolve(['You shouldn\'t be talking to me (step 1)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 2:
-        if(player.scuar) {
+        if(player.scuarbot) {
           resolve(['You shouldn\'t be talking to me (step 2)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 3:
-        if(player.scuar) {
+        if(player.scuarbot) {
           resolve(['You shouldn\'t be talking to me (step 3)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
@@ -154,9 +152,9 @@ function completedStep() {
         break;
       case 5:
         if((parseInt(text, 10) > 3 && parseInt(text, 10) < 7)
-          || imatch(text, 'four')
-          || imatch(text, 'five')
-          || imatch(text, 'six')) {
+          || Common.imatch(text, 'four')
+          || Common.imatch(text, 'five')
+          || Common.imatch(text, 'six')) {
           //WIN
           player.state += 1;
           player.save();
@@ -166,8 +164,7 @@ function completedStep() {
         }
         break;
       case 6:
-        console.log('state 6');
-        if(imatch(text, 'banana')) {
+        if(Common.imatch(text, 'banana')) {
           player.state += 1;
           player.save();
           console.log('sending', responseObject[7].snack.start);
@@ -179,7 +176,7 @@ function completedStep() {
         }
         break;
       case 7:
-        if(imatch(text, 'long may he floss')) {
+        if(Common.imatch(text, 'long may he floss')) {
           player.state += 1;
           player.save();
           resolve(responseObject[8].snack.start);
@@ -244,11 +241,3 @@ snackbot.onText(/^\/(state) (.+)/i, (msg, match) => {
     });
   }
 });
-
-function imatch(msg, goal) {
-  return (msg.toLowerCase() === goal.toLowerCase());
-}
-
-function iincludes(msg, goal) {
-  return msg.toLowerCase().includes(goal.toLowerCase());
-}

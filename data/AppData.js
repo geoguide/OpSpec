@@ -29,6 +29,12 @@ class AppData {
       snack1: 'CQADAQADRwADDEG5RikV-VdpKkD9Ag'
     };
 
+    this.noSave = [
+      'hi',
+      'hello',
+      'meow'
+    ];
+
     this.debug = false;
     //TODO break out into a state object with alimentary
     // and into two different response objects so we can do:

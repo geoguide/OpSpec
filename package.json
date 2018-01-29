@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./dist --copy-files --source-maps",
-    "build-watch": "rimraf -w dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./dist --copy-files --source-maps",
+    "build-watch": "rimraf dist/ && babel -w ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,./dist --copy-files --source-maps &",
     "start": "npm run build-watch && pm2 kill && pm2 start dist/index.js --watch && pm2 logs"
   },
   "repository": {
@@ -24,6 +24,7 @@
     "node-telegram-bot-api": "~0.29.0",
     "qr-image": "^3.2.0",
     "sanitize-filename": "^1.6.1",
+    "socket.io": "^2.0.4",
     "svg2img": "^0.2.8",
     "verbal-expressions": "^0.3.0",
     "web3": "^0.20.4"

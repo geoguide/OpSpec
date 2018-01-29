@@ -1,6 +1,7 @@
 import mysql from 'mysql2';
 import Config from '../config.js';
 import Common from './Common';
+import Emitter from './Emitter';
 
 const config = new Config();
 const debug = config.debug;
@@ -17,7 +18,6 @@ const connection = mysql.createConnection({
 
 class Message {
   constructor(props = null) {
-    //console.log('constructor got', props);
     try {
       if(props) {
         this.message_id = props.message_id;
@@ -38,8 +38,8 @@ class Message {
         };
         this.date = props.date;
         this.text = props.text;
-        this.photo = props.photo;
-        //console.log('Message.js says', JSON.stringify(this, 2));
+        this.photo = (props.photo) ? props.photo : null;
+        this.toBot = '';
       }
     } catch (e) {
       console.error(e);
@@ -47,11 +47,10 @@ class Message {
   }
 
   /* TODO figure out how to make this work best */
+  // -- this could use self properties
   saveMessage(data, state, bot = 'none') {
-    console.log('------- store message called -------');
-    console.log('------', data);
     try {
-      connection.query('INSERT INTO messages SET ?', {
+      connection.query('INSERT INTO messages SET ?', [{
         player_id: data.from.id,
         message_id: data.message_id,
         chat_id: data.chat.id,
@@ -59,7 +58,7 @@ class Message {
         telegram_id: data.from.id,
         state,
         bot
-      }, (error, results) => {
+      }], (error, results) => {
         if (error) throw error;
         if(debug) { console.log('message inserted', results.insertId); }
       });
@@ -68,24 +67,68 @@ class Message {
     }
   }
 
-  handleAdminMessage(message) {
+  delete() {
+    const self = this;
+    const del = new Promise((resolve, reject) => {
+      try {
+        connection.query(
+          'DELETE FROM `messages` WHERE message_id = ?', [self.message_id],
+          (error) => {
+            if (error) throw error;
+            resolve(true);
+          }
+        );
+      } catch (e) {
+        console.error('Player.delete', e);
+        reject(e);
+      }
+    });
+    return del;
+  }
+
+
+  handleMediaMessage(message, admin, bot) {
     //Show Message Details
     if(debug) { console.info(message); }
+    const modMsg = message;
     //Save all the images
     if(message.photo) {
       const caption = (message.caption) ? message.caption : '';
-      for (let i = 0; i < message.photo.length; i++) {
-        Common.saveImage(message.photo[i], caption);
+      for (let i = 0; i < modMsg.photo.length; i++) {
+        modMsg.photo[i].admin = admin;
+        modMsg.photo[i].player_id = message.from.id;
+        modMsg.photo[i].bot = bot;
+        Common.saveImage(modMsg.photo[i], caption);
       }
     } else if(message.document) {
       const caption = (message.caption) ? message.caption : message.document.file_name;
+      modMsg.document.player_id = modMsg.from.id;
+      modMsg.document.bot = bot;
       Common.saveFile(message.document, caption);
-    } else if(message.audio) {
-      const audioSave = message.audio;
-      audioSave.title = message.caption;
-      console.log('saving audio', message);
+    } else if(message.audio || message.voice) {
+      const audioSave = message.audio || message.voice;
+      audioSave.title = message.caption || 'voice';
+      audioSave.player_id = message.from.id;
+      audioSave.bot = bot;
       Common.saveAudio(audioSave);
     }
+  }
+
+  handleSpecific(messageObj) {
+    let finalized = false;
+    let reply = '';
+    switch(messageObj.text) {
+      case 'meow':
+        finalized = true;
+        reply = 'meow';
+        break;
+      default:
+        finalized = false;
+    }
+    if(reply){
+      Emitter.emit(this.toBot, messageObj.chat.id, reply);
+    }
+    return finalized;
   }
 }
 
