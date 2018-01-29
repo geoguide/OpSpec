@@ -207,6 +207,13 @@ function checkState(state) {
   return valid;
 }
 
+//Start code, this will be fixed
+snackbot.onText(/\/start/, (message) => {
+  snackbot.sendMessage(message.chat.id, 'Who are you?! Who sent you!?', {
+    parse_mode: 'Markdown'
+  });
+});
+
 snackbot.onText(/^\/(checkup)/i, (msg) => {
   if(debug) { console.log('------- checking player ------'); }
   player.load(msg.from).then(() => {
@@ -227,7 +234,9 @@ snackbot.onText(/^\/(state) (.+)/i, (msg, match) => {
   console.log('------- snack set state ------');
   const state = parseInt(match[2], 10);
   if (checkState(state)) {
-    player.setState(state).then(() => {
+    player.load(msg.from).then(() => {
+      return player.setState(state);
+    }).then(() => {
       const stateInfo = responseObject[player.state];
       snackbot.sendMessage(msg.chat.id,
         `your state is set to *${player.state}: ${stateInfo.title}*`, {

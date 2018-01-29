@@ -124,7 +124,7 @@ function completedStep() {
               resolve(['This is ID is already used']);
             }
           }).catch(error => {
-            console.error('caught error);');
+            console.error('someone tried using an invalid id:', text);
             resolve([error]);
           });
         }
