@@ -120,7 +120,6 @@ class Common {
         if (error) throw error;
         if(debug) { console.log('image saved', results.insertId); }
       });
-      console.log(query.sql);
     } catch (e) {
       console.error('Common.saveImage', e);
     }

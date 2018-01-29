@@ -43,7 +43,6 @@ class RegistrationCode {
             resolve(true);
           }
         });
-        console.log(query.sql);
       } catch (e) {
         console.error(e);
         reject(e);
