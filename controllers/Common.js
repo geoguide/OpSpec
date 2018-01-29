@@ -40,7 +40,7 @@ class Common {
 
   static storeMessage(data, state, bot = 'none') {
     if(debug) { console.log('------- Common store message called -------'); }
-    if(!appData.noSave.includes(data.text)) {
+    if(data.text && !appData.noSave.includes(data.text)) {
       try {
         connection.query('INSERT INTO messages SET ?', {
           player_id: data.from.id,
