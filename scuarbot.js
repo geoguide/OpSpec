@@ -15,8 +15,7 @@ import Emitter from './controllers/Emitter';
 const config = new Config();
 const appData = new AppData();
 const common = new Common();
-const { responseObject } = appData;
-
+const { states, responseObject } = appData;
 const io = require('socket.io')(8080);
 
 //TODO for idle messages make it so that you can send more than one idle
@@ -104,10 +103,11 @@ function completedStep() {
   const { state, substate } = player;
   const advance = new Promise((resolve, reject) => {
     switch(state) {
-      case 0:
+      case 'NEW':
+        console.log('got into the right step');
         if(text === '/start') {
           //Newb
-          resolve(responseObject[0].scuar.start);
+          resolve(responseObject.NEW.scuar.start);
         } else {
           RegistrationCode.checkCode(text).then(check => {
             if(check) {
@@ -115,73 +115,84 @@ function completedStep() {
             }
             return false;
           }).then(ok => {
+
             if(ok) {
               //win
-              player.state += 1;
-              player.save();
-              resolve(responseObject[1].scuar.start);
+              player.advanceState();
+              resolve(responseObject.START.scuar.start);
             } else {
               resolve(['This is ID is already used']);
             }
           }).catch(error => {
+            console.log(error);
             console.error('someone tried using an invalid id:', text);
             resolve([error]);
           });
         }
         break;
-      case 1:
+      case 'START':
         if(Common.iincludes(text, 'oakland')) {
           //win
-          player.state += 1;
-          player.save();
-          resolve(responseObject[2].scuar.start);
+          player.advanceState().then(() => {
+            resolve(responseObject.REG.scuar.start);
+          });
         } else {
-          resolve(getIdleResponses(1));
+          resolve(getIdleResponses(player.state));
         }
         break;
-      case 2:
-        if(Common.imatch(text, 'here')) {
+      case 'REG':
+        if(text === 'here') {
           //Win
-          player.state += 1;
-          player.save();
-          resolve(responseObject[3].scuar.start);
+          player.advanceState().then(() => {
+            console.log('ro', responseObject.STORY.scuar.start);
+            resolve(responseObject.STORY.scuar.start);
+            Emitter.emit('snack', 'Re̢m͘e͡m̡be͟r̕: f̷oĺlow SC̀UA͟Rbot’s ͝ins̶t̢ru̶c̨tío̧n̢s un̸t͟il ̧t̵hè l҉as̀t͘ ̕possibl̀e ͝mome̡nt͘-̢-d͠òn̶’t̴ give̡ th͞e̡m̶ ̕y͘o̷úr͝ ̀$2̵0̨! Lo͏o͜k f̡o̸r t̀h҉e͡ ̧S̡na͟c̴k B͡ri͜gad̡e͡ l̛ogo̶ ón t͢h́e s͟i̛d͝e͢ ͞o̧f̴ ̛th̴e SC͏U̷AR M͞a̕c͜hi҉ne™͝, t͜a̛k͢e͡ a pic̨tu͞re̕ ́o̧f̧ ́it̨, an̛d ͘s͢ȩnd ̨i̧t t́o̴ th͞e S͢CU̴A͢R̛b̨ot.͞ ̢ ');
+          });
+        } else if(Common.imatch(text, 'here')){
+          console.log('case sensitive shit');
+          //This would be a good place to implement handleMessage for specific steps
+          const hereplease = [
+            'SCUAR runs on only the most modern case-sensitive technology. Try that again, but all lower-case.'
+          ];
+          resolve(hereplease);
         } else {
-          resolve(getIdleResponses(2));
+          resolve(getIdleResponses(player.state));
         }
         break;
-      case 3:
-
+      case 'STORY':
         //TODO figure out a better way of doing this
         // -- i just have to pee right now and want to get something working
         // Can check if player has contacted snackbot yet too and trigger glitch
+        // 0 == neither solved
         // 1 == address sent
         // 2 == virus sent
         if(substate === 0) {
+          //Did they send a correct address or correct photo?
           if(web3.isAddress(text)) {
             player.substate = 1;
           } else if(messageObj.photo) {
             player.substate = 2;
           }
           player.save().then(() => {
-            resolve(responseObject[3].scuar.substates[player.substate]);
+            resolve(responseObject.STORY.scuar.substates[player.substate]);
           }).catch(error => console.error(error));
         } else if(substate === 1) {
+          //They have previous sent address
           if(messageObj.photo) {
             //Win
             player.substate = 0;
-            player.state += 1;
-            player.save().then(() => {
-              resolve(responseObject[4].scuar.start);
+            player.advanceState().then(() => {
+              resolve(responseObject.FACIAL.scuar.start);
             });
           } else {
-            resolve(responseObject[3].scuar.substates[substate]);
+            resolve(responseObject.STORY.scuar.substates[substate]);
           }
         } else if(substate === 2) {
+            //Has send photo
             if(web3.isAddress(text)) {
               //Win
               player.substate = 0;
-              player.state += 1;
-              player.save().then(() => {
+              player.advanceState().then(() => {
                 return scuar.sendMessage(messageObj.chat.id,
                   'S̷͇̱͘ő̴̝m̴͉̗̕ė̸̜̻t̷͔͕̚͝h̵̛̬̠́i̴̻̩̽͗n̷̥͍͑g̸̥̦̈́́ ̸̭̉s̸͉̙̄ê̵̱͒e̴̙͌̃͜m̶̧̄̍s̶̳̔̎ ̴̬͐͛t̵̢̐͘o̷̩͆ ̸͓̕͝h̶̝̟̓̋a̵̻͝v̸̦̐̊e̴̲̟̍̈́ ̴̧͍̍͐g̸̰͛͛ǒ̷̱͖́n̶̗̅͐ē̵̞̙̍ ̶̲̜̏w̷̖͋͝ŗ̷̝̂̍ö̴̢̪n̸͖̽g̷̨͌');
               }).then(() => scuar.sendAudio(messageObj.chat.id, 'CQADAQADKwADhVW5Rnr9XdgDY4yUAg'))
@@ -195,47 +206,47 @@ function completedStep() {
                 console.error(error);
               });
             } else {
-              resolve(responseObject[3].scuar.substates[substate]);
+              resolve(responseObject.STORY.scuar.substates[substate]);
             }
         }
         break;
-      case 4:
+      case 'OBSERVE':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to SCUAR']);
         } else {
           resolve(['You still haven\'t contacted snackbot']);
         }
         break;
-      case 5:
+      case 'SNACK':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to SCUAR']);
         } else {
           resolve(['You still haven\'t contacted snackbot']);
         }
         break;
-      case 6:
+      case 'EAT':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to SCUAR']);
         } else {
           resolve(['You still haven\'t contacted snackbot']);
         }
         break;
-      case 7:
+      case 'WIN':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to SCUAR']);
         } else {
           resolve(['You still haven\'t contacted snackbot']);
         }
         break;
       case 8:
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to me']);
+          resolve(['You shouldn\'t be talking to SCUAR STEP 8!?']);
         } else {
-          resolve(['You still haven\'t contacted snackbot']);
+          resolve(['You still haven\'t contacted snackbot STEP 8!?']);
         }
         break;
       default:
-        reject(getIdleResponses(99));
+        reject(getIdleResponses(player.state));
     }
   }).catch(error => {
     console.error(error);
@@ -301,7 +312,8 @@ scuar.onText(/\/snack (.+)/, (msg, match) => {
 
 //set your own state manually
 scuar.onText(/\/(state) (.+)/i, (msg, match) => {
-  const state = parseInt(match[2], 10);
+  const state = match[2];
+  console.log('state received for setting is', state);
   if (checkState(state)) {
     player.load(msg.from).then(() => {
      return player.setState(state);
@@ -323,7 +335,7 @@ scuar.onText(/\/(state) (.+)/i, (msg, match) => {
 scuar.onText(/^\/(reset)/i, (msg) => {
   console.log('------- reset state ------');
   player.load(msg.from).then(() => {
-   return player.setState(0);
+   return player.setState('START');
   }).then(() => {
     scuar.sendMessage(msg.chat.id, `your state is set to *${player.state}*`, {
       parse_mode: 'Markdown'

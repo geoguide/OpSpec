@@ -3,6 +3,7 @@ ssh ubuntu@52.25.136.246 <<EOF
  git pull origin master
  npm install --production
  npm run build
+ sleep 10s
  pm2 kill
  pm2 start dist/index.js
  exit

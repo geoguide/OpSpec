@@ -1,6 +1,9 @@
 import mysql from 'mysql2';
 import Config from '../config.js';
+import AppData from '../data/AppData';
 
+const appData = new AppData();
+const { states } = appData;
 const config = new Config();
 
 // create the connection to database
@@ -99,6 +102,12 @@ class Player {
       }
     });
     return save;
+  }
+
+  advanceState() {
+    const self = this;
+    self.state = states[self.state].next;
+    return self.save();
   }
 
   delete() {

@@ -13,13 +13,15 @@ const sanitize = require('sanitize-filename');
 const config = new Config();
 const appData = new AppData();
 const common = new Common();
-const { responseObject } = appData;
+const { responseObject, states } = appData;
+
 
 //For development
 const debug = appData.debug;
 
 const player = new Player();
 let messageObj = new Message();
+let returnMessage = '';
 
 const snackbot = new TelegramBot(
   config.bots.snackbot.key,
@@ -63,6 +65,7 @@ snackbot.on('message', (message) => {
         sendSeries(msgarray);
       }
     }).catch(error => {
+      sendMessage('Somehow you got past our code. We don\'t know how to answer you');
       console.error(error);
     });
   }
@@ -77,7 +80,7 @@ snackbot.onText(/\/tell_user (\w+) (.+)/, (msg, match) => {
     .catch(error => console.error(error));
 });
 
-//TODO make all of these common
+//TODO make all of these common or in messageObject
 function personalize(r) {
   let result = r;
   if (messageObj.from.first_name && messageObj.from.first_name !== '') {
@@ -103,92 +106,87 @@ function sendMessage(m) {
 //This can probably be moved to Player
 function completedStep() {
   const { text } = messageObj;
-  const { state, substate } = player;
 
+  //change player.state to ENUM with 'next' property
   const advance = new Promise((resolve, reject) => {
     switch(player.state) {
-      case 0:
+      case 'NEW':
         if(player.scuarbot) {
-          resolve(['You shouldn\'t be talking to me (step 0)']);
+          resolve(['You shouldn\'t be talking to me (step START)']);
         } else {
           resolve(['You still haven\'t contacted scuar!']);
         }
         break;
-      case 1:
+      case 'START':
         if(player.scuarbot === 1) {
           console.log('1');
-          resolve(['You shouldn\'t be talking to me (step 1)']);
+          resolve(['You shouldn\'t be talking to me (step REG)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
-      case 2:
+      case 'REG':
         if(player.scuarbot) {
           resolve(['You shouldn\'t be talking to me (step 2)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
-      case 3:
+      case 'STORY':
         if(player.scuarbot) {
           resolve(['You shouldn\'t be talking to me (step 3)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
-      case 4:
+      case 'FACIAL':
         if(messageObj.photo) {
-          console.log('you won and now doing things...');
           //WIN
-          player.state += 1;
-          player.save().then(() => {
+          player.advanceState().then(() => {
             return snackbot.sendAudio(messageObj.chat.id, 'http://www.snackbrigade.com/assets/Sound%20Check%20-%20Over-Here.mp3');
           }).then(() => {
               resolve(false);
           });
         } else {
-          resolve(responseObject[4].snack.idle);
+          resolve(responseObject.FACIAL.snack.idle);
         }
         break;
-      case 5:
+      case 'OBSERVE':
+        console.log('text was', text);
         if((parseInt(text, 10) > 3 && parseInt(text, 10) < 7)
           || Common.imatch(text, 'four')
           || Common.imatch(text, 'five')
           || Common.imatch(text, 'six')) {
           //WIN
-          player.state += 1;
-          player.save();
-          resolve(responseObject[6].snack.start);
+          player.advanceState();
+          resolve(responseObject.SNACK.snack.start);
         } else {
-          resolve(responseObject[5].snack.idle);
+          resolve(responseObject.OBSERVE.snack.idle);
         }
         break;
-      case 6:
+      case 'SNACK':
         if(Common.imatch(text, 'banana')) {
-          player.state += 1;
-          player.save();
-          console.log('sending', responseObject[7].snack.start);
-          resolve(responseObject[7].snack.start);
-          console.log('did we get past this somehow');
+          player.advanceState().then(() => {
+              resolve(responseObject.EAT.snack.start);
+          });
         } else {
           console.log('did not match');
-          resolve(responseObject[6].snack.idle);
+          resolve(responseObject.SNACK.snack.idle);
         }
         break;
-      case 7:
+      case 'EAT':
         if(Common.imatch(text, 'long may he floss')) {
-          player.state += 1;
-          player.save();
-          resolve(responseObject[8].snack.start);
+          player.advanceState();
+          resolve(responseObject.WIN.snack.start);
         } else {
-          resolve(responseObject[7].snack.idle);
+          resolve(responseObject.EAT.snack.idle);
         }
         break;
-      case 8:
-        resolve(responseObject[8].snack.idle);
+      case 'WIN':
+        resolve(responseObject.WIN.snack.idle);
         break;
       default:
-        resolve(['Tell me how you got here']);
+        reject(['Tell me how you got here']);
     }
   }).catch(error => {
     console.error(error);
@@ -196,7 +194,6 @@ function completedStep() {
   });
   return advance;
 }
-
 
 /* The Following are Temporary Duplication */
 function checkState(state) {
@@ -209,22 +206,33 @@ function checkState(state) {
 
 //Start code, this will be fixed
 snackbot.onText(/\/start/, (message) => {
-  snackbot.sendMessage(message.chat.id, 'Who are you?! Who sent you!?', {
-    parse_mode: 'Markdown'
+  player.load(message.from).then(() => {
+    if(!states[player.state].snack) {
+      returnMessage = 'Who are you?! Who sent you!?';
+    } else {
+      returnMessage = 'Um... you\'ve already started. Do you need to be reoriented?';
+    }
+    return snackbot.sendMessage(message.chat.id, returnMessage, {
+      parse_mode: 'Markdown'
+    });
+  }).then(() => {
+    //complete
+  }).catch(e => {
+    console.error(e);
   });
 });
 
 snackbot.onText(/^\/(checkup)/i, (msg) => {
   if(debug) { console.log('------- checking player ------'); }
   player.load(msg.from).then(() => {
-    let message = '';
     if (checkState(player.state)) {
-      message = `your state is set to *${player.state}: ${responseObject[player.state].title}*`;
+      returnMessage = `your state is set to *${player.state}:
+        ${responseObject[player.state].title}*`;
     } else {
-      message = `your state is MESSED UP *${player.state}*`;
+      returnMessage = `your state is MESSED UP *${player.state}*`;
     }
 
-    snackbot.sendMessage(msg.chat.id, message, {
+    snackbot.sendMessage(msg.chat.id, returnMessage, {
       parse_mode: 'Markdown'
     });
   }).catch((error) => console.error(error));
@@ -232,7 +240,7 @@ snackbot.onText(/^\/(checkup)/i, (msg) => {
 
 snackbot.onText(/^\/(state) (.+)/i, (msg, match) => {
   console.log('------- snack set state ------');
-  const state = parseInt(match[2], 10);
+  const state = match[2];
   if (checkState(state)) {
     player.load(msg.from).then(() => {
       return player.setState(state);

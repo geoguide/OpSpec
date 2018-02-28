@@ -2,26 +2,53 @@
 class AppData {
   constructor() {
     this.states = {
-      0: {
-        title: 'Welcome'
+      'NEW': {
+        title: 'Newb',
+        next: 'START',
+        snack: false,
+        scuar: true
       },
-      1: {
-        title: 'Registration'
+      'START': {
+        title: 'Welcome',
+        next: 'REG',
+        snack: false,
+        scuar: true
       },
-      2: {
-        title: 'Story'
+      'REG': {
+        title: 'Registration',
+        next: 'STORY',
+        snack: false,
+        scuar: true
       },
-      3: {
-        title: 'Disguise'
+      'STORY': {
+        title: 'Story',
+        next: 'FACIAL',
+        snack: false,
+        scuar: true
       },
-      4: {
-        title: 'Observation Mission'
+      'FACIAL': {
+        title: 'Disguise',
+        next: 'OBSERVE',
+        snack: true,
+        scuar: false
       },
-      5: {
-        title: 'Buy a snack'
+      'OBSERVE': {
+        title: 'Observation Mission',
+        next: 'SNACK',
+        snack: true,
+        scuar: false
       },
-      6: {
-        title: 'Eat a snack'
+      'SNACK': {
+        title: 'Buy a snack',
+        next: 'EAT',
+        snack: true,
+        scuar: false
+      },
+      'EAT': {
+        title: 'Eat a snack',
+        next: 'WIN',
+        snack: true,
+        scuar: false
       }
     };
 
@@ -32,7 +59,8 @@ class AppData {
     this.noSave = [
       'hi',
       'hello',
-      'meow'
+      'meow',
+      'asdf'
     ];
 
     this.debug = false;
@@ -48,7 +76,7 @@ class AppData {
           'Welcome to the snack resistance'
         ]
       },
-      0: {
+      NEW: {
         title: 'Step 0',
         scuar: {
           start: [
@@ -68,17 +96,16 @@ class AppData {
           ]
         }
       },
-      1: {
+      START: {
         title: 'Welcome',
         bots: ['scuar'],
         scuar: {
           start: [
             'Hello PLAYERNAME!',
             'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!',
-            'SCUAR is a brand new ministry called together by your government with your nutritional needs in mind. We’re here to help you understand your family’s alimentary needs and increase access to the foods you love, three times a day, every day!',
             'In this convenient ePacket, you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again!',
             'https://www.scuar.com/ePacket.pdf',
-            'When you have reviewed our materials, please respond by confirming the city you will be completing the program in'
+            'Once you’ve reviewed these materials, please respond with the name of the city in which you will be enrolling in our program'
           ],
           idle: [
             'We don\'t have a program in that city, are you sure you spelled it correctly?'
@@ -93,14 +120,14 @@ class AppData {
           ]
         }
       },
-      2: {
+      REG: {
         title: 'Demographics',
         bots: ['scuar'],
         scuar: {
           start: [
-            'Oakland! Great. Go Giants!',
-            'The high-tech SCUAR department runs exclusively on the newest and most advanced payment techniques.  To register with SCUAR and receive your first meal, please go to the following location: XXXX  To begin you will need $20 in cash, and to download a wallet for your SCUARcoin, which you can download for free here:  XXXXXX',
-            'Once you’ve arrived at the registration point, send a text saying “Here”.'
+            'Oakland! Great! Go Giants!',
+              'SCUAR uses only the newest and most advanced payment techniques to keep your payments secure. To register with SCUAR and receive your first meal, please go to the following location: https://goo.gl/maps/zDQtgdkejkm. To begin, you will need $20 in cash, and a digital wallet for your SCUARcoin, which you can download for free here: https://freewallet.org/currency/eth. Once you have downloaded your wallet, send us your ETH address or whatever address. ',
+            'Do not proceed to the Registration Point until you have downloaded your ETH wallet. Once you have downloaded your ETH wallet and arrived at the registration point, send a text saying, “here” (all lower case). '
           ],
           idle: [
             'We cannot confirm your location to be correct. Please let us know you have arrived at XXXX by texting us "here".'
@@ -115,12 +142,12 @@ class AppData {
           ]
         }
       },
-      3: {
+      STORY: {
         title: 'Bitcoin Orientation',
         bots: ['scuar', 'snack'],
         scuar: {
           start: [
-          'Welcome to the SCUAR Machine™, everyone’s favorite high-tech ATM-style futuristic gatekeeper to food security!  Take your $20, put it into the machine, and transfer the coins to your bitcoin wallet.'
+          'Welcome to the SCUAR Machine™, everyone’s favorite high-tech, ATM-style futuristic gatekeeper to Ultimate Food Security! Don’t forget to send us your ETH address so we can exchange your $20 US Dollars for ETH. Or, buy this snack and get your complimentary ETH. Here’s how you send your ETH address and some info on what a QR code is: link to QR code info and instructions on sending ETH address.'
           ],
           idle: [
             'Just send me the text address and logo for now'
@@ -145,7 +172,7 @@ class AppData {
           }
         }
       },
-      4: {
+      'FACIAL': {
         title: 'Initiation',
         bots: ['snack'],
         scuar: {
@@ -170,7 +197,7 @@ class AppData {
         notes: 'Send Voice Message about the story of SCUAR',
         termination: 'Give code word to get disguise'
       },
-      5: {
+      OBSERVE: {
         title: 'Observation Mission',
         bots: ['snack'],
         scuar: {
@@ -190,7 +217,7 @@ class AppData {
           ]
         }
       },
-      6: {
+      SNACK: {
         title: 'Snack Procurment',
         bots: ['snack'],
         scuar: {
@@ -211,7 +238,7 @@ class AppData {
           ]
         }
       },
-      7: {
+      EAT: {
         title: 'Plaque',
         bots: ['snack'],
         scuar: {
@@ -231,7 +258,7 @@ class AppData {
           ]
         }
       },
-      8: {
+      WIN: {
         title: 'Vandalism and debriefing',
         bots: ['snack'],
         scuar: {
