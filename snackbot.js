@@ -104,6 +104,8 @@ function sendMessage(m) {
 }
 
 //This can probably be moved to Player
+//TODO maybe explore recursively calling this on completed step instead of running next step in prev step
+//TODO move win criteria to response object try to get rid of this switch
 function completedStep() {
   const { text } = messageObj;
 
@@ -112,38 +114,39 @@ function completedStep() {
     switch(player.state) {
       case 'NEW':
         if(player.scuarbot) {
-          resolve(['You shouldn\'t be talking to me (step START)']);
+          resolve(['You shouldn\'t be talking to me (step NEW)']);
         } else {
           resolve(['You still haven\'t contacted scuar!']);
         }
         break;
       case 'START':
         if(player.scuarbot === 1) {
-          console.log('1');
-          resolve(['You shouldn\'t be talking to me (step REG)']);
+          resolve(['You shouldn\'t be talking to me (step START)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 'REG':
         if(player.scuarbot) {
-          resolve(['You shouldn\'t be talking to me (step 2)']);
+          resolve(['You shouldn\'t be talking to me (step REG)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 'STORY':
         if(player.scuarbot) {
-          resolve(['You shouldn\'t be talking to me (step 3)']);
+          resolve(['You shouldn\'t be talking to me (step STORY)']);
         } else {
           resolve(['You still haven\'t contacted scuar']);
         }
         break;
       case 'FACIAL':
-        if(messageObj.photo) {
+        if(Common.imatch(text, 'send it')) {
+          return snackbot.sendAudio(messageObj.chat.id, appData.audio.leave_open);
+        } else if(messageObj.photo) {
           //WIN
           player.advanceState().then(() => {
-            return snackbot.sendAudio(messageObj.chat.id, 'http://www.snackbrigade.com/assets/Sound%20Check%20-%20Over-Here.mp3');
+            return snackbot.sendAudio(messageObj.chat.id, appData.audio.observe);
           }).then(() => {
               resolve(false);
           });
@@ -152,14 +155,18 @@ function completedStep() {
         }
         break;
       case 'OBSERVE':
-        console.log('text was', text);
-        if((parseInt(text, 10) > 3 && parseInt(text, 10) < 7)
+        //TODO use one response variable for everything - you only need one
+        let response = messageObj.handleSpecificStep('snack', player.state, text);
+        if(response) {
+          resolve(response);
+        } else if((parseInt(text, 10) > 3 && parseInt(text, 10) < 7)
           || Common.imatch(text, 'four')
           || Common.imatch(text, 'five')
           || Common.imatch(text, 'six')) {
           //WIN
-          player.advanceState();
-          resolve(responseObject.SNACK.snack.start);
+          player.advanceState().then(() => {
+            resolve(responseObject.SNACK.snack.start);
+          });
         } else {
           resolve(responseObject.OBSERVE.snack.idle);
         }

@@ -86,7 +86,6 @@ class Message {
     return del;
   }
 
-
   handleMediaMessage(message, admin, bot) {
     //Show Message Details
     if(debug) { console.info(message); }
@@ -125,10 +124,44 @@ class Message {
       default:
         finalized = false;
     }
-    if(reply){
+    if(reply) {
       Emitter.emit(this.toBot, messageObj.chat.id, reply);
     }
     return finalized;
+  }
+
+  handleSpecificStep(bot, step, text) {
+    if(bot === 'scuar') {
+      switch(step) {
+        case 'REG':
+          if(Common.imatch(text, 'here')) {
+            return [ 'SCUAR runs on only the most modern case-sensitive technology. Try that again, but all lower-case.' ]
+          }
+          return false;
+          break;
+        default:
+          return false;
+      }
+    } else if(bot === 'snack') {
+      switch(step) {
+        case 'OBSERVE':
+          if(text.match(/^(zero|none|one|two|three|0|1|2|3|)$/)) { //less than expected
+            return [
+              'Hmmm. You missed some. If you want, go back and count again. If not, keep going and know that you’re at high risk of detection! At least you’re disguised. If you’re over that mission, answer this: did you reach the location?'
+            ]
+          } else if(text.match(/^(eight|nine|ten|eleven|8|9|10|11|12|0|1|2|3|)$/)) { //more
+            return [
+              'Paranoid much? That’s too many cameras! Better safe than sorry, though. Did you reach the location? Type yes or no.'
+            ]
+          }
+          return false;
+          break;
+        default:
+          return false;
+      }
+    } else {
+      return false;
+    }
   }
 }
 

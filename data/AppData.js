@@ -49,11 +49,21 @@ class AppData {
         next: 'WIN',
         snack: true,
         scuar: false
+      },
+      'WIN': {
+        title: 'Vandalism and debriefing',
+        next: null,
+        snack: true,
+        scuar: false
       }
     };
 
     this.audio = {
-      snack1: 'CQADAQADRwADDEG5RikV-VdpKkD9Ag'
+      snack1: 'CQADAQADRwADDEG5RikV-VdpKkD9Ag',
+      logo: 'http://www.snackbrigade.com/assets/snack-brigade-1-audio/010-look-for-logo.mp3',
+      leave_open: 'http://www.snackbrigade.com/assets/snack-brigade-1-audio/030-leave-open.mp3',
+      observe: 'http://www.snackbrigade.com/assets/snack-brigade-1-audio/040-observation-mission.mp3',
+      debriefing: 'http://www.snackbrigade.com/assets/snack-brigade-1-audio/060-long-may-he-floss.mp3'
     };
 
     this.noSave = [
@@ -67,6 +77,7 @@ class AppData {
     //TODO break out into a state object with alimentary
     // and into two different response objects so we can do:
     //const { responseObject } = appData.snack;
+    //OR Combine with other object
     this.responseObject = {
       initial: {
         scuar: [
@@ -80,10 +91,10 @@ class AppData {
         title: 'Step 0',
         scuar: {
           start: [
-            'Please enter your *unique id*'
+            'Please enter your *unique ID*'
           ],
           idle: [
-            'ID Not found, please try again',
+            'ID not found, please try again',
             'That isn\'t a valid ID'
           ]
         },
@@ -103,12 +114,12 @@ class AppData {
           start: [
             'Hello PLAYERNAME!',
             'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!',
-            'In this convenient ePacket, you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again!',
-            'https://www.scuar.com/ePacket.pdf',
-            'Once you’ve reviewed these materials, please respond with the name of the city in which you will be enrolling in our program'
+            'In this convenient [ePacket](http://www.scuar.agency/resources/epacket.pdf), you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again! For more information, go to: http://www.scuar.agency',
+            'Once you’ve reviewed these materials, please respond with the name of the city in which you will be enrolling in our program.'
           ],
           idle: [
-            'We don\'t have a program in that city, are you sure you spelled it correctly?'
+            'We don\'t have a program in that city. Are you sure you spelled it correctly?',
+            '"MESSAGE" - that is not Oakland: Sorry. SCUAR has not set up an outpost in your city yet. Try again in 2019 or enter a different city. '
           ]
         },
         snack: {
@@ -126,8 +137,9 @@ class AppData {
         scuar: {
           start: [
             'Oakland! Great! Go Giants!',
-              'SCUAR uses only the newest and most advanced payment techniques to keep your payments secure. To register with SCUAR and receive your first meal, please go to the following location: https://goo.gl/maps/zDQtgdkejkm. To begin, you will need $20 in cash, and a digital wallet for your SCUARcoin, which you can download for free here: https://freewallet.org/currency/eth. Once you have downloaded your wallet, send us your ETH address or whatever address. ',
-            'Do not proceed to the Registration Point until you have downloaded your ETH wallet. Once you have downloaded your ETH wallet and arrived at the registration point, send a text saying, “here” (all lower case). '
+            'SCUAR uses only the newest and most advanced payment techniques to keep your payments secure. To register with SCUAR, please go to the following location: https://goo.gl/maps/ZEoWuVLkNKL2',
+            'To begin, you will need $20 in cash, and a digital wallet for your SCUARcoin, which you can download for free here: https://freewallet.org/currency/eth. Once you have downloaded your wallet, send us your ETH address or whatever address.',
+            'Do not proceed to the Registration Point until you have downloaded your ETH wallet. Once you have downloaded your ETH wallet and arrived at the registration point, send a text saying, “here” (all lower case).'
           ],
           idle: [
             'We cannot confirm your location to be correct. Please let us know you have arrived at XXXX by texting us "here".'
@@ -147,10 +159,10 @@ class AppData {
         bots: ['scuar', 'snack'],
         scuar: {
           start: [
-          'Welcome to the SCUAR Machine™, everyone’s favorite high-tech, ATM-style futuristic gatekeeper to Ultimate Food Security! Don’t forget to send us your ETH address so we can exchange your $20 US Dollars for ETH. Or, buy this snack and get your complimentary ETH. Here’s how you send your ETH address and some info on what a QR code is: link to QR code info and instructions on sending ETH address.'
+          'Welcome to the SCUAR Machine™, everyone’s favorite high-tech, ATM-style futuristic gatekeeper to Ultimate Food Security! Don’t forget to send us your ETH address so we can exchange your $20 US Dollars for ETH. Or, buy this snack and get your complimentary ETH. Here’s how you send your ETH address and some info on what a QR code is: [link to QR code info and instructions on sending ETH address, and why it’s okay to send a public address.]'
           ],
           idle: [
-            'Just send me the text address and logo for now'
+            'Please send us your ETH address. It’s a QR code, which looks like a square. We love squares.'
           ],
           substates: {
             0: ['Send something'],
@@ -158,7 +170,7 @@ class AppData {
             2: ['Send Address']
           }
         },
-        snack: {
+        snack: { //TODO substates might not be needed here, maybe eth address is objective and photo just triggers a separate type of event that is not win state
           start: [
             'Who are you? Who sent you?!'
           ],
@@ -177,7 +189,7 @@ class AppData {
         bots: ['snack'],
         scuar: {
           start: [
-            'I\'m broken'
+            'S̷͇̱͘ő̴̝m̴͉̗̕ė̸̜̻t̷͔͕̚͝h̵̛̬̠́i̴̻̩̽͗n̷̥͍͑g̸̥̦̈́́ ̸̭̉s̸͉̙̄ê̵̱͒e̴̙͌̃͜m̶̧̄̍s̶̳̔̎ ̴̬͐͛t̵̢̐͘o̷̩͆ ̸͓̕͝h̶̝̟̓̋a̵̻͝v̸̦̐̊e̴̲̟̍̈́ ̴̧͍̍͐g̸̰͛͛ǒ̷̱͖́n̶̗̅͐ē̵̞̙̍ ̶̲̜̏w̷̖͋͝ŗ̷̝̂̍ö̴̢̪n̸͖̽g̷̨͌'
           ],
           idle: [
             'Have you started your facial scan for meal distribution?'
@@ -185,7 +197,7 @@ class AppData {
         },
         snack: {
           start: [
-            'Password: "full facial"'
+            'Yes! Welcome to the Snack Brigade! We’re glad you’re here! You probably want to know what’s going on. Start walking toward _____location and play the audio file we’re about to send you. When you’re ready to receive the file, text “send it” to Snackbrigadebot. Don’t worry--it might take a moment to arrive, but it’s coming!'
           ],
           idle: [
             'That\'s not your face!'
@@ -251,7 +263,7 @@ class AppData {
         },
         snack: {
           start: [
-            'Go to Snow Park and find the plaque'
+            'You made it! Nearby, you should see a commemorative plaque. Do you see it? Once you find it, text us the final four words on the plaque. Remember the case sensitive thing.'
           ],
           idle: [
             'Whaaaat is the plaque'
@@ -263,7 +275,7 @@ class AppData {
         bots: ['snack'],
         scuar: {
           start: [
-            'I\'m broken'
+            'Audio File'
           ],
           idle: [
             'I\'m broken!'

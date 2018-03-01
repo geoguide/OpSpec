@@ -61,7 +61,7 @@ scuar.on('message', (message) => {
       if(responseArray) {
         const msgarray = [];
         for (let i = 0; i < responseArray.length; i++) {
-          const r = personalize(responseArray[i]);
+          const r = personalize(responseArray[i], message.text);
           msgarray.push(r);
         }
         sendSeries(msgarray);
@@ -135,6 +135,11 @@ function completedStep() {
           //win
           player.advanceState().then(() => {
             resolve(responseObject.REG.scuar.start);
+            //TODO nooo go back and make the send series take objects
+            // objects should have a messaage type, delay, etc
+            setTimeout(function(){
+              scuar.sendAudio(messageObj.chat.id, appData.audio.logo);
+            }, 10000);
           });
         } else {
           resolve(getIdleResponses(player.state));
@@ -144,19 +149,15 @@ function completedStep() {
         if(text === 'here') {
           //Win
           player.advanceState().then(() => {
-            console.log('ro', responseObject.STORY.scuar.start);
             resolve(responseObject.STORY.scuar.start);
             Emitter.emit('snack', 'Re̢m͘e͡m̡be͟r̕: f̷oĺlow SC̀UA͟Rbot’s ͝ins̶t̢ru̶c̨tío̧n̢s un̸t͟il ̧t̵hè l҉as̀t͘ ̕possibl̀e ͝mome̡nt͘-̢-d͠òn̶’t̴ give̡ th͞e̡m̶ ̕y͘o̷úr͝ ̀$2̵0̨! Lo͏o͜k f̡o̸r t̀h҉e͡ ̧S̡na͟c̴k B͡ri͜gad̡e͡ l̛ogo̶ ón t͢h́e s͟i̛d͝e͢ ͞o̧f̴ ̛th̴e SC͏U̷AR M͞a̕c͜hi҉ne™͝, t͜a̛k͢e͡ a pic̨tu͞re̕ ́o̧f̧ ́it̨, an̛d ͘s͢ȩnd ̨i̧t t́o̴ th͞e S͢CU̴A͢R̛b̨ot.͞ ̢ ');
           });
-        } else if(Common.imatch(text, 'here')){
-          console.log('case sensitive shit');
-          //This would be a good place to implement handleMessage for specific steps
-          const hereplease = [
-            'SCUAR runs on only the most modern case-sensitive technology. Try that again, but all lower-case.'
-          ];
-          resolve(hereplease);
         } else {
-          resolve(getIdleResponses(player.state));
+          let response = messageObj.handleSpecificStep('scuar', 'REG', text);
+          if(!response) {
+            response = getIdleResponses(player.state);
+          }
+          resolve(response);
         }
         break;
       case 'STORY':
@@ -194,7 +195,7 @@ function completedStep() {
               player.substate = 0;
               player.advanceState().then(() => {
                 return scuar.sendMessage(messageObj.chat.id,
-                  'S̷͇̱͘ő̴̝m̴͉̗̕ė̸̜̻t̷͔͕̚͝h̵̛̬̠́i̴̻̩̽͗n̷̥͍͑g̸̥̦̈́́ ̸̭̉s̸͉̙̄ê̵̱͒e̴̙͌̃͜m̶̧̄̍s̶̳̔̎ ̴̬͐͛t̵̢̐͘o̷̩͆ ̸͓̕͝h̶̝̟̓̋a̵̻͝v̸̦̐̊e̴̲̟̍̈́ ̴̧͍̍͐g̸̰͛͛ǒ̷̱͖́n̶̗̅͐ē̵̞̙̍ ̶̲̜̏w̷̖͋͝ŗ̷̝̂̍ö̴̢̪n̸͖̽g̷̨͌');
+                  responseObject.FACIAL.scuar.start);
               }).then(() => scuar.sendAudio(messageObj.chat.id, 'CQADAQADKwADhVW5Rnr9XdgDY4yUAg'))
               .then(() => {
                 return Emitter.emit('snack',
@@ -210,39 +211,42 @@ function completedStep() {
             }
         }
         break;
+      case 'FACIAL':
+        resolve(responseObject.FACIAL.scuar.idle);
+        break;
       case 'OBSERVE':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to SCUAR']);
+          resolve(['You shouldn\'t be talking to SCUAR (OBSERVE)']);
         } else {
-          resolve(['You still haven\'t contacted snackbot']);
+          resolve(['You still haven\'t contacted snackbot (OBSERVE)']);
         }
         break;
       case 'SNACK':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to SCUAR']);
+          resolve(['You shouldn\'t be talking to SCUAR (SNACK)']);
         } else {
-          resolve(['You still haven\'t contacted snackbot']);
+          resolve(['You still haven\'t contacted snackbot (SNACK)']);
         }
         break;
       case 'EAT':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to SCUAR']);
+          resolve(['You shouldn\'t be talking to SCUAR (EAT)']);
         } else {
-          resolve(['You still haven\'t contacted snackbot']);
+          resolve(['You still haven\'t contacted snackbot (EAT)']);
         }
         break;
       case 'WIN':
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to SCUAR']);
+          resolve(['You shouldn\'t be talking to SCUAR (WIN)']);
         } else {
-          resolve(['You still haven\'t contacted snackbot']);
+          resolve(['You still haven\'t contacted snackbot (WIN)']);
         }
         break;
       case 8:
         if(player.snackbot) {
-          resolve(['You shouldn\'t be talking to SCUAR STEP 8!?']);
+          resolve(['You shouldn\'t be talking to SCUAR STEP 8!? (8)']);
         } else {
-          resolve(['You still haven\'t contacted snackbot STEP 8!?']);
+          resolve(['You still haven\'t contacted snackbot STEP 8!? (8)']);
         }
         break;
       default:
@@ -265,13 +269,17 @@ function getIdleResponses(state) {
   return [];
 }
 
-function personalize(r) {
+function personalize(r, messageText = null) {
   let result = r;
   if (messageObj.from.first_name && messageObj.from.first_name !== '') {
     result = r.replace(/PLAYERNAME/g, messageObj.from.first_name);
   } else {
     result = r.replace(/PLAYERNAME/g, 'citizen');
   }
+  if(messageText) {
+      result = result.replace(/MESSAGE/g, messageText);
+  }
+
   return result;
 }
 
