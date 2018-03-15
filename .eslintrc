@@ -9,7 +9,7 @@
       "arrow-body-style": 0,
       "no-unused-vars": 1,
       "comma-spacing": 1,
-      "object-curly-spacing": 1,
+      "object-curly-spacing": ["warn", "always"],
       "space-before-blocks": 1,
       "camelcase": 0,
       "keyword-spacing": 0,

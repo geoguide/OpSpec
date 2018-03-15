@@ -172,7 +172,7 @@ class Player {
             resolve(true);
           }
         );
-        //console.log(query.sql);
+        console.log(query.sql);
       } catch (e) {
         console.error('Player.setState', e);
         reject(e);

@@ -1,63 +1,8 @@
+import RegistrationCode from '../controllers/RegistrationCode';
 
 class AppData {
   constructor() {
-    this.states = {
-      'NEW': {
-        title: 'Newb',
-        next: 'START',
-        snack: false,
-        scuar: true
-      },
-      'START': {
-        title: 'Welcome',
-        next: 'REG',
-        snack: false,
-        scuar: true
-      },
-      'REG': {
-        title: 'Registration',
-        next: 'STORY',
-        snack: false,
-        scuar: true
-      },
-      'STORY': {
-        title: 'Story',
-        next: 'FACIAL',
-        snack: false,
-        scuar: true
-      },
-      'FACIAL': {
-        title: 'Disguise',
-        next: 'OBSERVE',
-        snack: true,
-        scuar: false
-      },
-      'OBSERVE': {
-        title: 'Observation Mission',
-        next: 'SNACK',
-        snack: true,
-        scuar: false
-      },
-      'SNACK': {
-        title: 'Buy a snack',
-        next: 'EAT',
-        snack: true,
-        scuar: false
-      },
-      'EAT': {
-        title: 'Eat a snack',
-        next: 'WIN',
-        snack: true,
-        scuar: false
-      },
-      'WIN': {
-        title: 'Vandalism and debriefing',
-        next: null,
-        snack: true,
-        scuar: false
-      }
-    };
-
+    //Audio files
     this.audio = {
       snack1: 'CQADAQADRwADDEG5RikV-VdpKkD9Ag',
       logo: 'http://www.snackbrigade.com/assets/snack-brigade-1-audio/010-look-for-logo.mp3',
@@ -66,6 +11,7 @@ class AppData {
       debriefing: 'http://www.snackbrigade.com/assets/snack-brigade-1-audio/060-long-may-he-floss.mp3'
     };
 
+    //Messages to not store
     this.noSave = [
       'hi',
       'hello',
@@ -74,21 +20,40 @@ class AppData {
     ];
 
     this.debug = false;
-    //TODO break out into a state object with alimentary
-    // and into two different response objects so we can do:
-    //const { responseObject } = appData.snack;
-    //OR Combine with other object
-    this.responseObject = {
-      initial: {
-        scuar: [
-          'Thank you for contacting SCUAR. Your time is important to us'
-        ],
-        snack: [
-          'Welcome to the snack resistance'
-        ]
+
+    //Experience states
+    //Spits + Trees:
+    // 1. try solutions instead of solution with next in the solution objects
+    // 2. binary tree
+    //Change delay to be in message object rather than it's own property
+    //smarter way to do this might be to have each bot have its own object and feed it to Bot()
+    this.states = {
+      INITIAL: {
+        title: 'initial',
+        next: 'NEW',
+        bots: ['snack', 'scaur'],
+        solution: {
+          type: 'pass',
+          win: ''
+        },
+        scuar: {
+          idle: [
+            'Thank you for contacting SCUAR. Your time is important to us'
+          ]
+        },
+        snack: {
+          idle: [
+            'Welcome to the snack resistance'
+          ]
+        }
       },
       NEW: {
         title: 'Step 0',
+        next: 'START',
+        solution: {
+          type: 'async',
+          win: RegistrationCode.applyCode
+        },
         scuar: {
           start: [
             'Please enter your *unique ID*'
@@ -109,17 +74,23 @@ class AppData {
       },
       START: {
         title: 'Welcome',
+        next: 'REG',
         bots: ['scuar'],
+        solution: {
+          type: 'match',
+          win: 'oakland'
+        },
         scuar: {
           start: [
-            'Hello PLAYERNAME!',
-            'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!',
-            'In this convenient [ePacket](http://www.scuar.agency/resources/epacket.pdf), you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again! For more information, go to: http://www.scuar.agency',
-            'Once you’ve reviewed these materials, please respond with the name of the city in which you will be enrolling in our program.'
+            { type: 'text', data:'Hello PLAYERNAME!' },
+            { type: 'text', data: 'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!'
+            },
+            { type: 'text', data: 'In this convenient [ePacket](http://www.scuar.agency/resources/epacket.pdf), you will find all the information you need to finish becoming a part of this exciting new program and ensure that you and your loved ones never miss a SCUAR meal again! For more information, go to: http://www.scuar.agency' },
+            { type: 'text', data: 'Once you’ve reviewed these materials, please respond with the name of the city in which you will be enrolling in our program.' }
           ],
           idle: [
-            'We don\'t have a program in that city. Are you sure you spelled it correctly?',
-            '"MESSAGE" - that is not Oakland: Sorry. SCUAR has not set up an outpost in your city yet. Try again in 2019 or enter a different city. '
+            { type: 'text', data: 'We don\'t have a program in that city. Are you sure you spelled it correctly?' },
+            { type: 'text', data: '"MESSAGE" - that is not Oakland: Sorry. SCUAR has not set up an outpost in your city yet. Try again in 2019 or enter a different city.' }
           ]
         },
         snack: {
@@ -133,13 +104,21 @@ class AppData {
       },
       REG: {
         title: 'Demographics',
+        next: 'STORY',
         bots: ['scuar'],
+        solution: {
+          type: 'match',
+          win: 'here'
+        },
         scuar: {
           start: [
             'Oakland! Great! Go Giants!',
             'SCUAR uses only the newest and most advanced payment techniques to keep your payments secure. To register with SCUAR, please go to the following location: https://goo.gl/maps/ZEoWuVLkNKL2',
             'To begin, you will need $20 in cash, and a digital wallet for your SCUARcoin, which you can download for free here: https://freewallet.org/currency/eth. Once you have downloaded your wallet, send us your ETH address or whatever address.',
             'Do not proceed to the Registration Point until you have downloaded your ETH wallet. Once you have downloaded your ETH wallet and arrived at the registration point, send a text saying, “here” (all lower case).'
+          ],
+          delay: [
+            { type: 'audio', data: this.audio.logo }
           ],
           idle: [
             'We cannot confirm your location to be correct. Please let us know you have arrived at XXXX by texting us "here".'
@@ -156,7 +135,12 @@ class AppData {
       },
       STORY: {
         title: 'Bitcoin Orientation',
+        next: 'FACIAL',
         bots: ['scuar', 'snack'],
+        solution: {
+          type: 'includes',
+          win: 'pizza'
+        },
         scuar: {
           start: [
           'Welcome to the SCUAR Machine™, everyone’s favorite high-tech, ATM-style futuristic gatekeeper to Ultimate Food Security! Don’t forget to send us your ETH address so we can exchange your $20 US Dollars for ETH. Or, buy this snack and get your complimentary ETH. Here’s how you send your ETH address and some info on what a QR code is: [link to QR code info and instructions on sending ETH address, and why it’s okay to send a public address.]'
@@ -186,7 +170,12 @@ class AppData {
       },
       'FACIAL': {
         title: 'Initiation',
+        next: 'OBSERVE',
         bots: ['snack'],
+        solution: {
+          type: 'type',
+          data: 'photo'
+        },
         scuar: {
           start: [
             'S̷͇̱͘ő̴̝m̴͉̗̕ė̸̜̻t̷͔͕̚͝h̵̛̬̠́i̴̻̩̽͗n̷̥͍͑g̸̥̦̈́́ ̸̭̉s̸͉̙̄ê̵̱͒e̴̙͌̃͜m̶̧̄̍s̶̳̔̎ ̴̬͐͛t̵̢̐͘o̷̩͆ ̸͓̕͝h̶̝̟̓̋a̵̻͝v̸̦̐̊e̴̲̟̍̈́ ̴̧͍̍͐g̸̰͛͛ǒ̷̱͖́n̶̗̅͐ē̵̞̙̍ ̶̲̜̏w̷̖͋͝ŗ̷̝̂̍ö̴̢̪n̸͖̽g̷̨͌'
@@ -197,7 +186,8 @@ class AppData {
         },
         snack: {
           start: [
-            'Yes! Welcome to the Snack Brigade! We’re glad you’re here! You probably want to know what’s going on. Start walking toward _____location and play the audio file we’re about to send you. When you’re ready to receive the file, text “send it” to Snackbrigadebot. Don’t worry--it might take a moment to arrive, but it’s coming!'
+            'Yes! Welcome to the Snack Brigade! We’re glad you’re here! You probably want to know what’s going on. Start walking toward _____location and play the audio file we’re about to send you. Don’t worry--it might take a moment to arrive, but it’s coming!',
+            { type: 'audio', data: this.audio.leave_open }
           ],
           idle: [
             'That\'s not your face!'
@@ -211,7 +201,12 @@ class AppData {
       },
       OBSERVE: {
         title: 'Observation Mission',
+        next: 'SNACK',
         bots: ['snack'],
+        solution: {
+          type: 'multi',
+          win: ['4', '5', '6', 'four', 'five', 'six' ]
+        },
         scuar: {
           start: [
             'I\'m broken'
@@ -222,7 +217,8 @@ class AppData {
         },
         snack: {
           start: [
-            'sneak around audio'
+            { type: 'text', data: 'please find enclosed this lovely audio file' },
+            { type: 'audio', data: this.audio.observe }
           ],
           idle: [
             'How many cameras did you see?'
@@ -231,7 +227,12 @@ class AppData {
       },
       SNACK: {
         title: 'Snack Procurment',
+        next: 'EAT',
         bots: ['snack'],
+        solution: {
+          type: 'match',
+          win: 'banana'
+        },
         scuar: {
           start: [
             'I\'m broken'
@@ -252,7 +253,13 @@ class AppData {
       },
       EAT: {
         title: 'Plaque',
+        next: 'WIN',
         bots: ['snack'],
+        solution: {
+          type: 'match',
+          case: false,
+          win: 'long may he floss'
+        },
         scuar: {
           start: [
             'I\'m broken'

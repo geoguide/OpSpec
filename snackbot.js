@@ -2,6 +2,7 @@ import Common from './controllers/Common';
 import Player from './controllers/Player';
 import Message from './controllers/Message';
 import Config from './config';
+import Bot from './controllers/Bot';
 import AppData from './data/AppData';
 import Emitter from './controllers/Emitter';
 
@@ -13,7 +14,7 @@ const sanitize = require('sanitize-filename');
 const config = new Config();
 const appData = new AppData();
 const common = new Common();
-const { responseObject, states } = appData;
+const { states } = appData;
 
 
 //For development
@@ -31,53 +32,22 @@ const snackbot = new TelegramBot(
 //Event Handlers
 Emitter.on('snack', (chatId, message) => {
   snackbot.sendMessage(chatId, message, { parse_mode: 'Markdown' })
-    .catch(error => console.error(error));
+    .catch(error => console.error(error.error));
+});
+
+Emitter.on('snack audio', (chatId, audioMessage) => {
+  snackbot.sendAudio(chatId, audioMessage);
 });
 
 //Every Message
 //maybe not check for command and just handle admin/stuff that doesn't affect anything.
 snackbot.on('message', (message) => {
-  const command = common.commandTester.test(message.text);
-  messageObj = new Message(message);
-  messageObj.toBot = 'snack';
-  //send error messages to user
-  if(!command && !messageObj.handleSpecific(messageObj)) {
-    //load user data (will create if load fails)
-    player.load(message.from).then(() => {
-      if(debug) { console.log('player is', player); }
-      //we can use emits for this stuff so we don't have to rewrite them
-      //otherwise they should just be handled in objects
-      messageObj.handleMediaMessage(message, player.admin, 'snack');
-      //emit('bot contacted', 'scuarbot');
-      if(player.snackbot === 0) {
-        player.setContactedBot('snackbot');
-      }
-      Common.storeMessage(message, player.state, 'Snackbot');
-      //has the player completed the step?
-      return completedStep();
-    }).then(responseArray => {
-      if(responseArray) {
-        const msgarray = [];
-        for (let i = 0; i < responseArray.length; i++) {
-          const r = personalize(responseArray[i]);
-          msgarray.push(r);
-        }
-        sendSeries(msgarray);
-      }
-    }).catch(error => {
-      sendMessage('Somehow you got past our code. We don\'t know how to answer you');
-      console.error(error);
-    });
-  }
-});
-
-snackbot.onText(/\/tell_user (\w+) (.+)/, (msg, match) => {
-  const user = match[1];
-  const message = match[2];
-  console.info('tell', user, 'this:', message);
-  // Maybe add user contacted and wait for specific responses
-	snackbot.sendMessage(user, message, { parse_mode: 'Markdown' })
-    .catch(error => console.error(error));
+  //io.emit('snack received', message);
+  const messageObj = new Message();
+  //messageObj.saveMessage(message); // Should return promise
+  //New
+  var bot = new Bot({ bot: 'snack', from: message.from });
+  bot.handleMessage(message); //return instructions or promise? Could handle sending of messages here rather than in bot object
 });
 
 //TODO make all of these common or in messageObject
@@ -151,7 +121,7 @@ function completedStep() {
               resolve(false);
           });
         } else {
-          resolve(responseObject.FACIAL.snack.idle);
+          resolve(states.FACIAL.snack.idle);
         }
         break;
       case 'OBSERVE':
@@ -165,35 +135,35 @@ function completedStep() {
           || Common.imatch(text, 'six')) {
           //WIN
           player.advanceState().then(() => {
-            resolve(responseObject.SNACK.snack.start);
+            resolve(states.SNACK.snack.start);
           });
         } else {
-          resolve(responseObject.OBSERVE.snack.idle);
+          resolve(states.OBSERVE.snack.idle);
         }
         break;
       case 'SNACK':
         if(Common.imatch(text, 'banana')) {
           player.advanceState().then(() => {
-              resolve(responseObject.EAT.snack.start);
+              resolve(states.EAT.snack.start);
           });
         } else {
           console.log('did not match');
-          resolve(responseObject.SNACK.snack.idle);
+          resolve(states.SNACK.snack.idle);
         }
         break;
       case 'EAT':
         if(Common.imatch(text, 'long may he floss')) {
           player.advanceState();
-          resolve(responseObject.WIN.snack.start);
+          resolve(states.WIN.snack.start);
         } else {
-          resolve(responseObject.EAT.snack.idle);
+          resolve(states.EAT.snack.idle);
         }
         break;
       case 'WIN':
-        resolve(responseObject.WIN.snack.idle);
+        resolve(states.WIN.snack.idle);
         break;
       default:
-        reject(['Tell me how you got here']);
+        reject(['snack Tell me how you got here']);
     }
   }).catch(error => {
     console.error(error);
@@ -203,16 +173,9 @@ function completedStep() {
 }
 
 /* The Following are Temporary Duplication */
-function checkState(state) {
-  let valid = false;
-  if (responseObject[state]) {
-    valid = true;
-  }
-  return valid;
-}
 
 //Start code, this will be fixed
-snackbot.onText(/\/start/, (message) => {
+/*snackbot.onText(/\/start/, (message) => {
   player.load(message.from).then(() => {
     if(!states[player.state].snack) {
       returnMessage = 'Who are you?! Who sent you!?';
@@ -227,41 +190,4 @@ snackbot.onText(/\/start/, (message) => {
   }).catch(e => {
     console.error(e);
   });
-});
-
-snackbot.onText(/^\/(checkup)/i, (msg) => {
-  if(debug) { console.log('------- checking player ------'); }
-  player.load(msg.from).then(() => {
-    if (checkState(player.state)) {
-      returnMessage = `your state is set to *${player.state}:
-        ${responseObject[player.state].title}*`;
-    } else {
-      returnMessage = `your state is MESSED UP *${player.state}*`;
-    }
-
-    snackbot.sendMessage(msg.chat.id, returnMessage, {
-      parse_mode: 'Markdown'
-    });
-  }).catch((error) => console.error(error));
-});
-
-snackbot.onText(/^\/(state) (.+)/i, (msg, match) => {
-  console.log('------- snack set state ------');
-  const state = match[2];
-  if (checkState(state)) {
-    player.load(msg.from).then(() => {
-      return player.setState(state);
-    }).then(() => {
-      const stateInfo = responseObject[player.state];
-      snackbot.sendMessage(msg.chat.id,
-        `your state is set to *${player.state}: ${stateInfo.title}*`, {
-          parse_mode: 'Markdown'
-      });
-      //console.log('state player', player);
-    }).catch((error) => console.error(error));
-  } else {
-    snackbot.sendMessage(msg.chat.id, `requested state (${state}) is *INVALID*`, {
-      parse_mode: 'Markdown'
-    });
-  }
-});
+});*/

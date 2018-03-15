@@ -51,6 +51,14 @@ class RegistrationCode {
     return check;
   }
 
+  static applyCode(messageObject) {
+    const { text, from } = messageObject;
+    return RegistrationCode.checkCode(text).then((result) => {
+      console.log('ok usingggg', text);
+      return RegistrationCode.useCode({ player_id:from.id, code: text });
+    });
+  }
+
   static useCode(codeInfo) {
     console.log('use code', codeInfo);
     const use = new Promise((resolve, reject) => {
@@ -63,7 +71,7 @@ class RegistrationCode {
           if (error) throw error;
             resolve(true);
         });
-        console.log(query.sql);
+        //console.log('!important', query);
       } catch (e) {
         console.error(e);
         reject(e);

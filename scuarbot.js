@@ -3,11 +3,12 @@ import qr from 'qr-image';
 import fs from 'fs';
 import sanitize from 'sanitize-filename';
 import Web3 from 'web3';
+
 //Custom modules
 import Common from './controllers/Common';
 import Player from './controllers/Player';
 import Message from './controllers/Message';
-import RegistrationCode from './controllers/RegistrationCode';
+import Bot from './controllers/Bot';
 import Config from './config';
 import AppData from './data/AppData';
 import Emitter from './controllers/Emitter';
@@ -15,17 +16,13 @@ import Emitter from './controllers/Emitter';
 const config = new Config();
 const appData = new AppData();
 const common = new Common();
-const { states, responseObject } = appData;
+const { states } = appData;
 const io = require('socket.io')(8080);
 
 //TODO for idle messages make it so that you can send more than one idle
 
 //For development
 const debug = config.debug;
-
-//our objects
-const player = new Player();
-let messageObj = new Message();
 
 // TODO: Figure out final bots vs development bots
 const scuar = new TelegramBot(config.bots.scuar.key, {
@@ -35,59 +32,20 @@ const scuar = new TelegramBot(config.bots.scuar.key, {
 //Ethereum
 const web3 = new Web3();
 
+//try passing in bot object OR passing in something to make bot object in message and switch on it
+
 //Every Message
 //maybe not check for command and just handle admin/stuff that doesn't affect anything.
 scuar.on('message', (message) => {
   io.emit('scuar received', message);
-  const command = common.commandTester.test(message.text);
-  messageObj = new Message(message);
-  messageObj.toBot = 'scuar';
-  //send error messages to user
-  if(!command && !messageObj.handleSpecific(messageObj)) {
-    //load user data (will create if load fails)
-    player.load(message.from).then(() => {
-      if(debug) { console.log('player is', player); }
-      //we can use emits for this stuff so we don't have to rewrite them
-      //otherwise they should just be handled in objects
-      messageObj.handleMediaMessage(message, player.admin, 'scuar');
-      //emit('bot contacted', 'scuarbot');
-      if(player.scuarbot === 0) {
-        player.setContactedBot('scuarbot');
-      }
-      Common.storeMessage(message, player.state, 'SCUARBot');
-      //has the player completed the step?
-      return completedStep();
-    }).then(responseArray => {
-      if(responseArray) {
-        const msgarray = [];
-        for (let i = 0; i < responseArray.length; i++) {
-          const r = personalize(responseArray[i], message.text);
-          msgarray.push(r);
-        }
-        sendSeries(msgarray);
-      }
-    }).catch(error => {
-      console.error(error);
-    });
-  }
+  const messageObj = new Message();
+  //messageObj.saveMessage(message); // Should return promise
+  //New
+  var bot = new Bot({ bot: 'scuar', from: message.from });
+  bot.handleMessage(message); //return instructions or promise? Could handle sending of messages here rather than in bot object
 });
 
-scuar.onText(/\/tell_user (\w+) (.+)/, (msg, match) => {
-  const user = match[1];
-  const message = match[2];
-  console.info('tell', user, 'this:', message);
-  // Maybe add user contacted and wait for specific responses
-	scuar.sendMessage(user, message, { parse_mode: 'Markdown' })
-  .catch(error => console.error(error));
-});
-
-function checkState(state) {
-  let valid = false;
-  if (responseObject[state]) {
-    valid = true;
-  }
-  return valid;
-}
+//Emission handler
 
 //React to event elsewhere telling bot to say something
 //TODO add more, and more interesting events
@@ -96,7 +54,15 @@ Emitter.on('scuar', (chatId, message) => {
     .catch(error => console.error(error.error));
 });
 
-//This can probably be moved to Player
+Emitter.on('scuar audio', (chatId, audioMessage) => {
+  scuar.sendAudio(chatId, audioMessage);
+});
+
+/* The following is depreciated */
+
+//Steps, eliminate this and move to object effectively and messageHandler
+
+/* Depreciated step method for reference
 function completedStep() {
   //TODO move imatch and iinclude to Message
   const { text } = messageObj;
@@ -107,7 +73,7 @@ function completedStep() {
         console.log('got into the right step');
         if(text === '/start') {
           //Newb
-          resolve(responseObject.NEW.scuar.start);
+          resolve(states.NEW.scuar.start);
         } else {
           RegistrationCode.checkCode(text).then(check => {
             if(check) {
@@ -119,7 +85,7 @@ function completedStep() {
             if(ok) {
               //win
               player.advanceState();
-              resolve(responseObject.START.scuar.start);
+              resolve(states.START.scuar.start);
             } else {
               resolve(['This is ID is already used']);
             }
@@ -134,7 +100,7 @@ function completedStep() {
         if(Common.iincludes(text, 'oakland')) {
           //win
           player.advanceState().then(() => {
-            resolve(responseObject.REG.scuar.start);
+            resolve(states.REG.scuar.start);
             //TODO nooo go back and make the send series take objects
             // objects should have a messaage type, delay, etc
             setTimeout(function(){
@@ -149,8 +115,9 @@ function completedStep() {
         if(text === 'here') {
           //Win
           player.advanceState().then(() => {
-            resolve(responseObject.STORY.scuar.start);
-            Emitter.emit('snack', 'Re̢m͘e͡m̡be͟r̕: f̷oĺlow SC̀UA͟Rbot’s ͝ins̶t̢ru̶c̨tío̧n̢s un̸t͟il ̧t̵hè l҉as̀t͘ ̕possibl̀e ͝mome̡nt͘-̢-d͠òn̶’t̴ give̡ th͞e̡m̶ ̕y͘o̷úr͝ ̀$2̵0̨! Lo͏o͜k f̡o̸r t̀h҉e͡ ̧S̡na͟c̴k B͡ri͜gad̡e͡ l̛ogo̶ ón t͢h́e s͟i̛d͝e͢ ͞o̧f̴ ̛th̴e SC͏U̷AR M͞a̕c͜hi҉ne™͝, t͜a̛k͢e͡ a pic̨tu͞re̕ ́o̧f̧ ́it̨, an̛d ͘s͢ȩnd ̨i̧t t́o̴ th͞e S͢CU̴A͢R̛b̨ot.͞ ̢ ');
+            resolve(states.STORY.scuar.start);
+            const m = 'Re̢m͘e͡m̡be͟r̕: f̷oĺlow SC̀UA͟Rbot’s ͝ins̶t̢ru̶c̨tío̧n̢s un̸t͟il ̧t̵hè l҉as̀t͘ ̕possibl̀e ͝mome̡nt͘-̢-d͠òn̶’t̴ give̡ th͞e̡m̶ ̕y͘o̷úr͝ ̀$2̵0̨! Lo͏o͜k f̡o̸r t̀h҉e͡ ̧S̡na͟c̴k B͡ri͜gad̡e͡ l̛ogo̶ ón t͢h́e s͟i̛d͝e͢ ͞o̧f̴ ̛th̴e SC͏U̷AR M͞a̕c͜hi҉ne™͝, t͜a̛k͢e͡ a pic̨tu͞re̕ ́o̧f̧ ́it̨, an̛d ͘s͢ȩnd ̨i̧t t́o̴ th͞e S͢CU̴A͢R̛b̨ot.͞ ̢ ';
+            Emitter.emit('snack', { id: messageObj.chat.id, type: 'text', data: m } );
           });
         } else {
           let response = messageObj.handleSpecificStep('scuar', 'REG', text);
@@ -175,7 +142,7 @@ function completedStep() {
             player.substate = 2;
           }
           player.save().then(() => {
-            resolve(responseObject.STORY.scuar.substates[player.substate]);
+            resolve(states.STORY.scuar.substates[player.substate]);
           }).catch(error => console.error(error));
         } else if(substate === 1) {
           //They have previous sent address
@@ -183,10 +150,10 @@ function completedStep() {
             //Win
             player.substate = 0;
             player.advanceState().then(() => {
-              resolve(responseObject.FACIAL.scuar.start);
+              resolve(states.FACIAL.scuar.start);
             });
           } else {
-            resolve(responseObject.STORY.scuar.substates[substate]);
+            resolve(states.STORY.scuar.substates[substate]);
           }
         } else if(substate === 2) {
             //Has send photo
@@ -195,7 +162,7 @@ function completedStep() {
               player.substate = 0;
               player.advanceState().then(() => {
                 return scuar.sendMessage(messageObj.chat.id,
-                  responseObject.FACIAL.scuar.start);
+                  states.FACIAL.scuar.start);
               }).then(() => scuar.sendAudio(messageObj.chat.id, 'CQADAQADKwADhVW5Rnr9XdgDY4yUAg'))
               .then(() => {
                 return Emitter.emit('snack',
@@ -207,12 +174,12 @@ function completedStep() {
                 console.error(error);
               });
             } else {
-              resolve(responseObject.STORY.scuar.substates[substate]);
+              resolve(states.STORY.scuar.substates[substate]);
             }
         }
         break;
       case 'FACIAL':
-        resolve(responseObject.FACIAL.scuar.idle);
+        resolve(states.FACIAL.scuar.idle);
         break;
       case 'OBSERVE':
         if(player.snackbot) {
@@ -258,115 +225,7 @@ function completedStep() {
   });
   return advance;
 }
-
-function getIdleResponses(state) {
-  if(state !== null) {
-    if(responseObject[state] && responseObject[state].scuar.idle) {
-      return [Common.getRandomElement(responseObject[state].scuar.idle)];
-    }
-    return [Common.getRandomElement(responseObject.default.scuar.idle)];
-  }
-  return [];
-}
-
-function personalize(r, messageText = null) {
-  let result = r;
-  if (messageObj.from.first_name && messageObj.from.first_name !== '') {
-    result = r.replace(/PLAYERNAME/g, messageObj.from.first_name);
-  } else {
-    result = r.replace(/PLAYERNAME/g, 'citizen');
-  }
-  if(messageText) {
-      result = result.replace(/MESSAGE/g, messageText);
-  }
-
-  return result;
-}
-
-function sendMessage(m) {
-  return scuar.sendMessage(messageObj.chat.id, m, {
-    parse_mode: 'Markdown'
-  }).catch(error => console.error(error));
-}
-
-/* Not actually series but accounts for telegram's random delays */
-function sendSeries(messageArray) {
-  for(let i = 0; i < messageArray.length; i++) {
-    setTimeout(sendMessage, i * 1000, messageArray[i]);
-  }
-}
-
-/* Commands! */
-//Say something back
-scuar.onText(/\/echo (.+)/, (message, match) => {
-  const chatId = message.chat.id;
-  const resp = match[1]; // the captured "whatever"
-
-  // send back the matched "whatever" to the chat
-  scuar.sendMessage(chatId, resp);
-});
-
-//Start code, this will be fixed
-scuar.onText(/\/start/, (message) => {
-  scuar.sendMessage(message.chat.id, 'Please enter your *unique code*.', {
-    parse_mode: 'Markdown'
-  });
-});
-
-//tell snackbot to say something
-scuar.onText(/\/snack (.+)/, (msg, match) => {
-  Emitter.emit('snack', msg.from.id, `yoyo eat the ${match}`);
-});
-
-//set your own state manually
-scuar.onText(/\/(state) (.+)/i, (msg, match) => {
-  const state = match[2];
-  console.log('state received for setting is', state);
-  if (checkState(state)) {
-    player.load(msg.from).then(() => {
-     return player.setState(state);
-   }).then(() => {
-      const stateInfo = responseObject[player.state];
-      scuar.sendMessage(msg.chat.id, `your state is set to *${player.state}: ${stateInfo.title}*`, {
-        parse_mode: 'Markdown'
-      });
-    }).catch((error) => console.error(error));
-  } else {
-    console.error('bad state', state);
-    scuar.sendMessage(msg.chat.id, `requested state (${state}) is *INVALID*`, {
-      parse_mode: 'Markdown'
-    });
-  }
-});
-
-//reset to state 0
-scuar.onText(/^\/(reset)/i, (msg) => {
-  console.log('------- reset state ------');
-  player.load(msg.from).then(() => {
-   return player.setState('START');
-  }).then(() => {
-    scuar.sendMessage(msg.chat.id, `your state is set to *${player.state}*`, {
-      parse_mode: 'Markdown'
-    });
-  }).catch((error) => console.error(error));
-});
-
-//Check on your current state
-scuar.onText(/^\/(checkup)/i, (msg) => {
-  if(debug) { console.log('------- checking player ------'); }
-  player.load(msg.from).then(() => {
-    let message = '';
-    if (checkState(player.state)) {
-      message = `your state is set to *${player.state}: ${responseObject[player.state].title}*`;
-    } else {
-      message = `your state is MESSED UP *${player.state}*`;
-    }
-
-    scuar.sendMessage(msg.chat.id, message, {
-      parse_mode: 'Markdown'
-    });
-  }).catch((error) => console.error(error));
-});
+*/
 
 /* Old stuff for reference */
 
