@@ -49,22 +49,19 @@ class Message {
   /* TODO figure out how to make this work best */
   // -- this could use self properties
   saveMessage(data, state, bot = 'none') {
-    try {
-      connection.query('INSERT INTO messages SET ?', [{
+      const save = connection.query('INSERT INTO messages SET ?', [{
         player_id: data.from.id,
         message_id: data.message_id,
         chat_id: data.chat.id,
         message: data.text,
         telegram_id: data.from.id,
-        state,
+        state: state || 'none',
         bot
       }], (error, results) => {
-        if (error) throw error;
+        if (error) { console.log(error); console.log('sql is', save.sql); throw error };
         if(debug) { console.log('message inserted', results.insertId); }
       });
-    } catch (e) {
-      console.error(e);
-    }
+    return save;
   }
 
   delete() {

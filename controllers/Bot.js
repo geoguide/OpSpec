@@ -1,14 +1,12 @@
-import mysql from 'mysql2';
-import Config from '../config.js';
 import Common from './Common';
 import Emitter from './Emitter';
+import Message from './Message';
 import AppData from '../data/AppData';
 import Player from './Player';
 
 const appData = new AppData();
 const { states } = appData;
 const common = new Common();
-const config = new Config();
 const player = new Player();
 
 class Bot {
@@ -22,53 +20,65 @@ class Bot {
       this.messageObject = {};
       this.responses = [];
     } catch (e) {
-      console.error(e);
+      console.error('bot constructor', e);
+      console.trace();
     }
-    //console.log('from bot', this);
   }
 
   handleMessage(messageObject) {
+    const m = new Message();
     this.messageObject = messageObject;
+
+    //Ask to be removed from group chats (currently configured to not allow adds)
+    if(messageObject.chat.id < 0) {
+      console.error(this.bot, 'is still in a group chat', messageObject);
+      const req = 'I am a bot that does not belong in group chats. Please remove me.';
+      Emitter.emit('snack', messageObject.chat.id, req);
+      return;
+    }
 
     player.load(this.from).then(() => { //Set player up
 
-      //Check for specific response for step
+      //Save Message
+      m.saveMessage(messageObject, player.state, this.bot);
 
-      //check for specific response in general
-
+      //TODO turn this into a promise chain
       if(this.handleCommand(messageObject)) { //Check for command
-        console.log('was cmd');
-      } else if(this.handleStateSpecific(messageObject)) { //handle state specific responses
-        console.log('was state spec');
-      } else if(this.handleSpecific(messageObject)) { //Handle specific messages in general
-        console.log('was spec');
-      } else if(states[player.state].bots && states[player.state].bots.includes(this.bot)) { //Any other answer
+        console.info('Player issued command');
+      } else if(this.handleStateSpecific(messageObject)) { //handle state specific responses -  not yet implemented
+        console.info('Response was caught by state specific response:', messageObject.text);
+      } else if(this.handleSpecific(messageObject)) { //Handle specific messages in general, currently just meow
+        console.log('Response handled by global specific response');
+      } else if(states[player.state].bots && states[player.state].bots.includes(this.bot)) { //If bot should be receiving this message
+        //Any other answer
         this.checkForAnswer(messageObject, states[player.state].solution).then((result) => { //Check for right answer
           if(result) {
-            console.log('was answer');
+            //win
             var curState = player.state;
             var nextState = states[curState].next;
+
             //Do answery things
             player.advanceState().then(() => {
               var botState = states[nextState][this.bot];
               this.sendSeries(botState.start);
+
+              //Delayed messages, TODO roll into message objects as property
               if(botState.delay) {
                 setTimeout(function() {
                   _this.sendSeries(botState.delay);
                 }, 10000);
-              } else {
-                //console.log('NO DELAY', botState);
               }
+
             });
           } else {
-            console.log('was idle');
+            console.info('Message triggered idle response');
             this.responses = this.getIdle();
             this.sendSeries(this.responses);
           }
         });
 
       } else {
-        console.log('this state doesn\'t have this bot.');
+        console.log('Message in state doesn\'t have this bot.');
         this.responses = this.getIdle();
         this.sendSeries(this.responses);
       }
@@ -93,11 +103,13 @@ class Bot {
 
   personalize(r, messageText = null) {
     let result = r;
+
     if (this.from.first_name && this.from.first_name !== '') {
       result = r.replace(/PLAYERNAME/g, this.from.first_name);
     } else {
       result = r.replace(/PLAYERNAME/g, 'citizen');
     }
+
     if(messageText) {
         result = result.replace(/MESSAGE/g, messageText);
     }
@@ -176,7 +188,7 @@ class Bot {
           player.setState(state.toUpperCase()).then(() => {
             const stateInfo = states[player.state];
             Emitter.emit(this.bot, chatId, `your state is set to *${player.state}: ${stateInfo.title}*`)
-          }).catch((error) => console.error(error));
+          }).catch((error) => console.error('set state', error));
         } else {
           console.error('bad state', state);
           Emitter.emit(this.bot, chatId, `requested state (${state}) is *INVALID*`);
@@ -186,7 +198,7 @@ class Bot {
 
         player.setState('START').then(() => {
           Emitter.emit(this.bot, chatId, `your state is set to *${player.state}*`);
-        }).catch((error) => console.error(error));
+        }).catch((error) => console.error('set state start', error));
 
       } else if(text.match(checkup)) {
 
@@ -208,7 +220,8 @@ class Bot {
 
   checkForAnswer(messageObject, solution) {
     var text = messageObject.text;
-    console.log('checkin');
+
+    //TODO make switch statement
     const win = new Promise((resolve, reject) => {
       if(!solution || !solution.type) {
         resolve(false);
@@ -223,14 +236,12 @@ class Bot {
           resolve(false);
         });
       } else if(solution.type === 'multi') { //Needs to get redesigned if going to be used
-        console.log(solution);
         if(solution.win.includes(text)) {
           resolve(true);
         } else {
           resolve(false);
         }
       } else if(solution.type === 'type') {
-        console.log('type: ', messageObject);
         if(messageObject[solution.data]) {
           resolve(true);
         } else {

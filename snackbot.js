@@ -32,7 +32,7 @@ const snackbot = new TelegramBot(
 //Event Handlers
 Emitter.on('snack', (chatId, message) => {
   snackbot.sendMessage(chatId, message, { parse_mode: 'Markdown' })
-    .catch(error => console.error(error.error));
+    .catch(error => console.error('snack emit', chatId, message, error.error));
 });
 
 Emitter.on('snack audio', (chatId, audioMessage) => {
@@ -43,7 +43,6 @@ Emitter.on('snack audio', (chatId, audioMessage) => {
 //maybe not check for command and just handle admin/stuff that doesn't affect anything.
 snackbot.on('message', (message) => {
   //io.emit('snack received', message);
-  const messageObj = new Message();
   //messageObj.saveMessage(message); // Should return promise
   //New
   var bot = new Bot({ bot: 'snack', from: message.from });
@@ -70,7 +69,7 @@ function sendSeries(messageArray) {
 function sendMessage(m) {
   return snackbot.sendMessage(messageObj.chat.id, m, {
     parse_mode: 'Markdown'
-  }).catch(error => console.error(error));
+  }).catch(error => console.error('snack send message', error));
 }
 
 //This can probably be moved to Player
@@ -166,7 +165,7 @@ function completedStep() {
         reject(['snack Tell me how you got here']);
     }
   }).catch(error => {
-    console.error(error);
+    console.error('snack steps', error);
     //reject(error);
   });
   return advance;
