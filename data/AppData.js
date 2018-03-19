@@ -11,6 +11,10 @@ class AppData {
       debriefing: 'http://www.snackbrigade.com/assets/snack-brigade-1-audio/060-long-may-he-floss.mp3'
     };
 
+    this.images = {
+      minimap: 'https://blog-trycontechnologi.netdna-ssl.com/blog/wp-content/uploads/2014/08/Screen-Shot-2015-04-18-at-8.29.10-pm.png?x39658'
+    };
+
     //Messages to not store
     this.noSave = [
       'hi',
@@ -21,17 +25,287 @@ class AppData {
 
     this.debug = false;
 
+    this.states = {
+      INITIAL: {
+        title: 'initial',
+        next: 'NEW',
+        bots: ['scuar'],
+        solution: {
+          type: 'pass',
+          win: ''
+        },
+        scuar: {
+          idle: [
+            'Thank you for contacting SCUAR. Your time is important to us.',
+            'Welcome to the Access Initiative. Please enter your *unique id*.'
+          ]
+        },
+        snack: {
+          idle: [
+            'Welcome to the snack resistance'
+          ]
+        }
+      },
+      NEW: {
+        title: 'Step 0',
+        next: 'START',
+        bots: ['scuar'],
+        solution: {
+          type: 'async',
+          win: RegistrationCode.applyCode
+        },
+        scuar: {
+          start: [
+            'Please enter your *unique ID*'
+          ],
+          idle: [
+            'ID not found, please try again',
+            'That isn\'t a valid ID'
+          ]
+        },
+        snack: {
+          start: [
+            'Who are you? Who sent you?!'
+          ],
+          idle: [
+            'HWat!?'
+          ]
+        }
+      },
+      START: {
+        title: 'Welcome',
+        next: 'REG',
+        bots: ['scuar'],
+        solution: {
+          type: 'match',
+          win: 'oakland'
+        },
+        scuar: {
+          start: [
+            { type: 'text', data:'Hello PLAYERNAME!' },
+            { type: 'text', data: 'Welcome to the Access Initiative™, a service provided by the Syndicate on Comestibles and Underwriters for Alimentation and Refreshments (SCUAR)! We’d like to thank you for beginning the enrollment process and taking your first step on the path to food security. Welcome aboard!'
+            },
+            { type: 'text', data: 'Please enter the name of the city in which you will be enrolling in our program.' }
+          ],
+          idle: [
+            { type: 'text', data: 'We don\'t have a program in that city. Are you sure you spelled it correctly?' },
+            { type: 'text', data: '"MESSAGE" - that is not Oakland: Sorry. SCUAR has not set up an outpost in your city yet. Try again in 2019 or enter a different city.' }
+          ]
+        },
+        snack: {
+          start: [
+            'Who are you? Who sent you?!'
+          ],
+          idle: [
+            'HWat!?'
+          ]
+        }
+      },
+      REG: {
+        title: 'Demographics',
+        next: 'STORY',
+        bots: ['snack'],
+        solution: {
+          type: 'match',
+          win: 'open'
+        },
+        scuar: {
+          start: [
+            'Oakland! Great! Go Giants!',
+            'To finish registering, please head down to our offices, and bring $20 for your registration fee',
+            { type: 'photo', data: this.images.minimap },
+            'Our offices are open from XX:XX to YY:YY DAY1-DAY2'
+          ],
+          idle: [
+            'Some random idle thing'
+          ]
+        },
+        snack: {
+          start: [
+            'Thank god you came when SCUAR was closed, otherwise there would be no hope for you.  Quick, we need to get you to a safer location.  Head towards 15th and Franklin, and text us the name of the Café that is always open.  Get it?  Always open'
+          ],
+          idle: [
+            'Always open. C\'mon.'
+          ]
+        }
+      },
+      STORY: {
+        title: 'Bitcoin Orientation',
+        next: 'FACIAL',
+        bots: ['snack'],
+        solution: {
+          type: 'includes',
+          win: 'monkey'
+        },
+        scuar: {
+          idle: [
+            'Please send us your ETH address. It’s a QR code, which looks like a square. We love squares.'
+          ],
+        },
+        snack: { //TODO substates might not be needed here, maybe eth address is objective and photo just triggers a separate type of event that is not win state
+          start: [
+            'That’s right!  Head in there.  We’re going to train you to be a part of the Snack Brigade, but you’re probably hungry after all that escaping from the SCUARS.  Let’s get our first free snack.  Ask for a Free Snack at the counter, and give them $20.  Sorry, when we say “Free Snacks” we really mean Snacks of Liberty!  But don’t worry, there are many more snacks to come'
+          ],
+          idle: [
+            'Go talk to the people at open.'
+          ]
+        }
+      },
+      'FACIAL': {
+        title: 'Initiation',
+        next: 'WIN',
+        bots: ['snack'],
+        solution: {
+          type: 'multi',
+          win: ['4', '5', '6', 'four', 'five', 'six' ]
+        },
+        scuar: {
+          idle: [
+            'Have you started your facial scan for meal distribution?'
+          ]
+        },
+        snack: {
+          start: [
+            { type: 'audio', data: this.audio.leave_open }
+          ],
+          idle: [
+            'Check out that audio file, let us know how many you found.'
+          ]
+        },
+        idle_snack: [
+          'Let me know when you have the code word'
+        ],
+        notes: 'Send Voice Message about the story of SCUAR',
+        termination: 'Give code word to get disguise'
+      },
+      OBSERVE: {
+        title: 'Observation Mission',
+        next: 'SNACK',
+        bots: ['snack'],
+        solution: {
+          type: 'multi',
+          win: ['4', '5', '6', 'four', 'five', 'six' ]
+        },
+        scuar: {
+          start: [
+            'I\'m broken'
+          ],
+          idle: [
+            'I\'m broken!'
+          ]
+        },
+        snack: {
+          start: [
+            { type: 'text', data: 'please find enclosed this lovely audio file' },
+            { type: 'audio', data: this.audio.observe }
+          ],
+          idle: [
+            'How many cameras did you see?'
+          ]
+        }
+      },
+      SNACK: {
+        title: 'Snack Procurment',
+        next: 'EAT',
+        bots: ['snack'],
+        solution: {
+          type: 'match',
+          win: 'banana'
+        },
+        scuar: {
+          start: [
+            'I\'m broken'
+          ],
+          idle: [
+            'I\'m broken!'
+          ]
+        },
+        snack: {
+          start: [
+            'You found all the cameras!  Or maybe you didn’t.  That’s ok.  You can go look for them later.  I’m hungry, aren’t you?  Let’s eat.  Snack Brigade is all about snacking when you feel it. Free Snacks are never truly free, but they are still delicious, and “free” means more than one thing!',
+            'Let’s go in this place.  It’s Open.  Keep your disguise on.  This place is heavily surveilled.  Go up to the counter and order the “Special Snack.”  You’ll need to give them some Bitcoin, but you know all about that now.',
+          ],
+          idle: [
+            'snack idle 6'
+          ]
+        }
+      },
+      EAT: {
+        title: 'Plaque',
+        next: 'WIN',
+        bots: ['snack'],
+        solution: {
+          type: 'match',
+          case: false,
+          win: 'long may he floss'
+        },
+        scuar: {
+          start: [
+            'I\'m broken'
+          ],
+          idle: [
+            'I\'m broken!'
+          ]
+        },
+        snack: {
+          start: [
+            'You made it! Nearby, you should see a commemorative plaque. Do you see it? Once you find it, text us the final four words on the plaque. Remember the case sensitive thing.'
+          ],
+          idle: [
+            'Whaaaat is the plaque'
+          ]
+        }
+      },
+      WIN: {
+        title: 'Vandalism and debriefing',
+        bots: ['snack'],
+        scuar: {
+          start: [
+            'Audio File'
+          ],
+          idle: [
+            'I\'m broken!'
+          ]
+        },
+        snack: {
+          start: [
+            'You won?'
+          ],
+          idle: [
+            'You already won. Go tell a friend'
+          ]
+        }
+      },
+      defaults: {
+        title: 'Default Information',
+        bots: ['scuar', 'snack'],
+        scuar: {
+          start: [],
+          idle: [
+            'Did you know that snacks are already illegal in 15 states?',
+            'Studies show that snacking causes obesity in 65.8% of snacking chinchillas'
+          ]
+        },
+        snack: {
+          start: [],
+          idle: [
+            'There are idle options, but it\'s up to you to figure them out.'
+          ]
+        }
+      }
+    };
+
     //Experience states
     //Spits + Trees:
     // 1. try solutions instead of solution with next in the solution objects
     // 2. binary tree
     //Change delay to be in message object rather than it's own property
     //smarter way to do this might be to have each bot have its own object and feed it to Bot()
-    this.states = {
+    this.states_old = {
       INITIAL: {
         title: 'initial',
         next: 'NEW',
-        bots: ['snack', 'scaur'],
+        bots: ['snack', 'scuar'],
         solution: {
           type: 'pass',
           win: ''

@@ -92,6 +92,8 @@ class Bot {
       Emitter.emit(this.bot, this.chatId, message);
     } else if(m.type === 'audio') {
       Emitter.emit(this.bot+' audio', this.chatId, m.data);
+    } else if(m.type === 'photo') {
+      Emitter.emit(this.bot+' photo', this.chatId, m.data);
     }
   }
 
@@ -122,7 +124,7 @@ class Bot {
       if(states[player.state] && states[player.state][this.bot].idle) {
         return [Common.getRandomElement(states[player.state][this.bot].idle)];
       }
-      return [Common.getRandomElement(states.default[this.bot].idle)];
+      return [Common.getRandomElement(states.defaults[this.bot].idle)];
     }
     return [];
   }
@@ -228,6 +230,7 @@ class Bot {
       } else if(solution.type === 'match' && Common.iincludes(text, solution.win)) { //win
         resolve(true);
       } else if(solution.type === 'pass') {
+        console.log('pass type');
         resolve(true);
       } else if(solution.type === 'async') {
         solution.win(messageObject).then(() => {

@@ -42,6 +42,10 @@ Emitter.on('scuar audio', (chatId, audioMessage) => {
   scuar.sendAudio(chatId, audioMessage);
 });
 
+Emitter.on('scuar photo', (chatId, data) => {
+  scuar.sendPhoto(chatId, data);
+});
+
 /* The following is depreciated */
 
 /* Old stuff for reference */
