@@ -42,7 +42,7 @@ class AppData {
         },
         snack: {
           idle: [
-            'Welcome to the snack resistance'
+            'Who are you who sent you?'
           ]
         }
       },
@@ -95,9 +95,6 @@ class AppData {
         snack: {
           start: [
             'Who are you? Who sent you?!'
-          ],
-          idle: [
-            'HWat!?'
           ]
         }
       },
@@ -115,9 +112,6 @@ class AppData {
             'To finish registering, please head down to our offices, and bring $20 for your registration fee',
             { type: 'photo', data: this.images.minimap },
             'Our offices are open from XX:XX to YY:YY DAY1-DAY2'
-          ],
-          idle: [
-            'Some random idle thing'
           ]
         },
         snack: {
@@ -177,84 +171,6 @@ class AppData {
         ],
         notes: 'Send Voice Message about the story of SCUAR',
         termination: 'Give code word to get disguise'
-      },
-      OBSERVE: {
-        title: 'Observation Mission',
-        next: 'SNACK',
-        bots: ['snack'],
-        solution: {
-          type: 'multi',
-          win: ['4', '5', '6', 'four', 'five', 'six' ]
-        },
-        scuar: {
-          start: [
-            'I\'m broken'
-          ],
-          idle: [
-            'I\'m broken!'
-          ]
-        },
-        snack: {
-          start: [
-            { type: 'text', data: 'please find enclosed this lovely audio file' },
-            { type: 'audio', data: this.audio.observe }
-          ],
-          idle: [
-            'How many cameras did you see?'
-          ]
-        }
-      },
-      SNACK: {
-        title: 'Snack Procurment',
-        next: 'EAT',
-        bots: ['snack'],
-        solution: {
-          type: 'match',
-          win: 'banana'
-        },
-        scuar: {
-          start: [
-            'I\'m broken'
-          ],
-          idle: [
-            'I\'m broken!'
-          ]
-        },
-        snack: {
-          start: [
-            'You found all the cameras!  Or maybe you didn’t.  That’s ok.  You can go look for them later.  I’m hungry, aren’t you?  Let’s eat.  Snack Brigade is all about snacking when you feel it. Free Snacks are never truly free, but they are still delicious, and “free” means more than one thing!',
-            'Let’s go in this place.  It’s Open.  Keep your disguise on.  This place is heavily surveilled.  Go up to the counter and order the “Special Snack.”  You’ll need to give them some Bitcoin, but you know all about that now.',
-          ],
-          idle: [
-            'snack idle 6'
-          ]
-        }
-      },
-      EAT: {
-        title: 'Plaque',
-        next: 'WIN',
-        bots: ['snack'],
-        solution: {
-          type: 'match',
-          case: false,
-          win: 'long may he floss'
-        },
-        scuar: {
-          start: [
-            'I\'m broken'
-          ],
-          idle: [
-            'I\'m broken!'
-          ]
-        },
-        snack: {
-          start: [
-            'You made it! Nearby, you should see a commemorative plaque. Do you see it? Once you find it, text us the final four words on the plaque. Remember the case sensitive thing.'
-          ],
-          idle: [
-            'Whaaaat is the plaque'
-          ]
-        }
       },
       WIN: {
         title: 'Vandalism and debriefing',

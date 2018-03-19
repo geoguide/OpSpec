@@ -163,6 +163,7 @@ class Bot {
       const stateCmd = /\/(state) (.+)/i;
       const reset = /^\/(reset)/i;
       const checkup = /^\/(checkup)/i;
+      const start = /^\/(start)/i;
 
       if(text.match(echo)) {
 
@@ -213,6 +214,8 @@ class Bot {
 
         Emitter.emit(this.bot, this.chatId, message);
 
+      } else if(text.match(start)) {
+        this.sendSeries(states[player.state][this.bot].start);
       } else {
         commandAccepted = false;
       }
